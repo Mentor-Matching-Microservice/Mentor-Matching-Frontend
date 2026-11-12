@@ -6,7 +6,7 @@ import { userApi } from '@/services/user.api'
 import { useAuthStore } from '@/stores/auth-store'
 import type { CurrentUserApiResponse } from '@/types/api/user'
 import type { CurrentUser, CurrentUserRole } from '@/types/models/user'
-import { isAxiosNotFoundError } from '@/utils/http-error'
+import { isAxiosForbiddenError, isAxiosNotFoundError } from '@/utils/http-error'
 
 type JwtPayloadClaims = {
   sub?: string
@@ -124,7 +124,7 @@ async function fetchCurrentUser(): Promise<CurrentUser> {
   try {
     return mapCurrentUserApiResponse((await userApi.getCurrentUser()).data, accessToken)
   } catch (error) {
-    if (isAxiosNotFoundError(error) && jwtClaims.id) {
+    if ((isAxiosNotFoundError(error) || isAxiosForbiddenError(error)) && jwtClaims.id) {
       return {
         id: jwtClaims.id,
         email: jwtClaims.email ?? '',

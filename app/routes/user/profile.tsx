@@ -302,6 +302,16 @@ export default function UserProfilePage() {
     setSaveToastMessage(null)
     setSubmitErrorMessage(null)
 
+    if (!formValues.fullName.trim()) {
+      setSubmitErrorMessage('Vui lòng nhập họ và tên để hoàn thiện hồ sơ.')
+      return
+    }
+
+    if (!formValues.phone.trim()) {
+      setSubmitErrorMessage('Vui lòng nhập số điện thoại liên hệ.')
+      return
+    }
+
     if (!formValues.userType) {
       setSubmitErrorMessage('Vui lòng chọn vai trò học tập để hoàn thiện hồ sơ.')
       return

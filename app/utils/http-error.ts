@@ -7,6 +7,10 @@ export function isAxiosUnauthorizedError<T = unknown>(error: unknown): error is 
   return axios.isAxiosError<T>(error) && error.response?.status === 401
 }
 
+export function isAxiosForbiddenError<T = unknown>(error: unknown): error is AxiosError<T> {
+  return axios.isAxiosError<T>(error) && error.response?.status === 403
+}
+
 export function isAxiosNotFoundError<T = unknown>(error: unknown): error is AxiosError<T> {
   return axios.isAxiosError<T>(error) && error.response?.status === 404
 }

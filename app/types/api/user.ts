@@ -24,8 +24,8 @@ export type UpdateCurrentUserRequest = {
 }
 
 export type LearnerProfileApiResponse = {
-  id: number | null
-  userId: number
+  id: number | string | null
+  userId: number | string
   gender: Gender | null
   birthYear: number | null
   schoolName: string | null
