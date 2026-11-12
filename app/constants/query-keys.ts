@@ -34,7 +34,7 @@ export const QUERY_KEYS = {
       ['mentor', 'featured', params] as const
   },
   payment: {
-    detail: (paymentId: number) => ['payment', 'detail', paymentId] as const,
+    detail: (paymentId: number | string) => ['payment', 'detail', paymentId] as const,
     my: (params: {
       page: number
       size: number

@@ -52,7 +52,7 @@ function getMeetingLabel(booking: BookingApiResponse) {
   return booking.meetingAddress?.trim() || 'Buổi học trực tiếp'
 }
 
-function getPaymentCode(paymentId: number | null, providerReferenceId: string | null) {
+function getPaymentCode(paymentId: number | string | null, providerReferenceId: string | null) {
   if (providerReferenceId?.trim()) return providerReferenceId.trim()
   if (paymentId !== null) return `PAY-ID-${paymentId}`
   return 'Đang cập nhật'
@@ -129,10 +129,14 @@ export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams()
   const hasHydrated = useAuthStore((state) => state.hasHydrated)
   const sessionId = searchParams.get('session_id')
-  const paymentIdParam = searchParams.get('payment_id')
+  const paymentIdParam = searchParams.get('payment_id')?.trim() || null
   const parsedPaymentId = paymentIdParam ? Number(paymentIdParam) : Number.NaN
-  const paymentId =
-    Number.isInteger(parsedPaymentId) && parsedPaymentId > 0 ? parsedPaymentId : null
+  const paymentId: number | string | null =
+    Number.isInteger(parsedPaymentId) && parsedPaymentId > 0
+      ? parsedPaymentId
+      : paymentIdParam && /^[0-9a-fA-F-]{8,}$/.test(paymentIdParam)
+        ? paymentIdParam
+        : null
 
   const paymentDetailQuery = usePaymentDetailQuery(paymentId)
   const bookingsQuery = useCurrentUserBookingsQuery(undefined)
@@ -140,7 +144,8 @@ export default function PaymentSuccessPage() {
   const bookingId = paymentDetailQuery.data?.bookingId ?? null
   const relatedBooking =
     bookingId !== null
-      ? (bookingsQuery.data?.data.find((booking) => booking.id === bookingId) ?? null)
+      ? (bookingsQuery.data?.data.find((booking) => String(booking.id) === String(bookingId)) ??
+        null)
       : null
 
   useEffect(() => {

@@ -1,19 +1,23 @@
 import type { PageQueryParams, PageResponse } from '@/types/api/common'
 import type { PaymentStatus } from '@/types/models/booking'
 
+export type PaymentId = number | string
+
 export type PaymentMethodApiResponse = 'CASH' | 'BANK_TRANSFER' | 'E_WALLET' | 'CARD' | 'GATEWAY'
 
 export type PaymentProviderApiResponse = 'MOMO' | 'VNPAY' | 'STRIPE' | 'PAYPAL' | 'MANUAL_BANK'
 
 export type CreatePaymentRequest = {
-  bookingId: number
+  bookingId: number | string
 }
 
 export type PaymentApiResponse = {
-  id: number
-  bookingId: number
-  payerUserId: number
+  id: PaymentId
+  bookingId: number | string
+  payerUserId: number | string
+  mentorId?: number | string
   amount: number
+  currency?: string
   paymentMethod: PaymentMethodApiResponse
   paymentProvider: PaymentProviderApiResponse
   status: PaymentStatus
@@ -22,8 +26,8 @@ export type PaymentApiResponse = {
 }
 
 export type PaymentListItemApiResponse = {
-  id: number
-  bookingId: number
+  id: PaymentId
+  bookingId: number | string
   amount: number
   status: PaymentStatus
   paidAt: string | null
@@ -47,8 +51,8 @@ export type GetMentorPaymentsQueryParams = PageQueryParams<
 export type PaymentListPageApiResponse = PageResponse<PaymentListItemApiResponse>
 
 export type PaymentDetailApiResponse = {
-  id: number
-  bookingId: number
+  id: PaymentId
+  bookingId: number | string
   amount: number
   status: PaymentStatus
   bookingStatus: import('@/types/models/booking').BookingStatus

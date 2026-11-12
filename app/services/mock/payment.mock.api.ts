@@ -8,6 +8,7 @@ import type {
   GetMyPaymentsQueryParams,
   PaymentApiResponse,
   PaymentDetailApiResponse,
+  PaymentId,
   PaymentListItemApiResponse,
   PaymentListPageApiResponse
 } from '@/types/api/payment'
@@ -149,13 +150,13 @@ export const mockPaymentApi = {
     )
   },
 
-  async getPaymentDetail(paymentId: number): Promise<ApiResponse<PaymentDetailApiResponse>> {
+  async getPaymentDetail(paymentId: PaymentId): Promise<ApiResponse<PaymentDetailApiResponse>> {
     await delay()
 
     const { user } = requireMockSession()
     const bookingsResponse = await mockBookingApi.getMyBookings({ page: 1, size: 100 })
     const matchedBooking =
-      bookingsResponse.data.data.find((booking) => booking.id === paymentId) ??
+      bookingsResponse.data.data.find((booking) => String(booking.id) === String(paymentId)) ??
       bookingsResponse.data.data.find((booking) => booking.status === 'PENDING') ??
       bookingsResponse.data.data[0]
 

@@ -3,7 +3,7 @@ import { queryOptions, useQuery } from '@tanstack/react-query'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { paymentApi } from '@/services/payment.api'
 import { useAuthStore } from '@/stores/auth-store'
-import type { PaymentDetailApiResponse } from '@/types/api/payment'
+import type { PaymentDetailApiResponse, PaymentId } from '@/types/api/payment'
 
 const MINIMUM_PAYMENT_DETAIL_DELAY_MS = 1000
 
@@ -11,7 +11,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-async function fetchPaymentDetail(paymentId: number): Promise<PaymentDetailApiResponse> {
+async function fetchPaymentDetail(paymentId: PaymentId): Promise<PaymentDetailApiResponse> {
   const [response] = await Promise.all([
     paymentApi.getPaymentDetail(paymentId),
     delay(MINIMUM_PAYMENT_DETAIL_DELAY_MS)
@@ -20,21 +20,24 @@ async function fetchPaymentDetail(paymentId: number): Promise<PaymentDetailApiRe
   return response.data
 }
 
-export function getPaymentDetailQueryOptions(paymentId: number) {
+export function getPaymentDetailQueryOptions(paymentId: PaymentId) {
   return queryOptions({
     queryKey: QUERY_KEYS.payment.detail(paymentId),
     queryFn: () => fetchPaymentDetail(paymentId)
   })
 }
 
-export function usePaymentDetailQuery(paymentId: number | null) {
+export function usePaymentDetailQuery(paymentId: PaymentId | null) {
   const accessToken = useAuthStore((state) => state.accessToken)
   const hasHydrated = useAuthStore((state) => state.hasHydrated)
+  const isValidPaymentId =
+    typeof paymentId === 'number'
+      ? Number.isInteger(paymentId) && paymentId > 0
+      : typeof paymentId === 'string' && paymentId.trim().length > 0
 
   return useQuery({
     queryKey: QUERY_KEYS.payment.detail(paymentId ?? 0),
     queryFn: () => fetchPaymentDetail(paymentId ?? 0),
-    enabled:
-      hasHydrated && Boolean(accessToken) && Number.isInteger(paymentId) && Number(paymentId) > 0
+    enabled: hasHydrated && Boolean(accessToken) && isValidPaymentId
   })
 }
