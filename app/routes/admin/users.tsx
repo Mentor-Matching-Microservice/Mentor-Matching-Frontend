@@ -46,6 +46,7 @@ const statusFilters: Array<{ key: UserStatusFilter; label: string }> = [
 
 const roleLabelMap: Record<UserRoleApiResponse, string> = {
   LEARNER: 'Học viên',
+  LEANER: 'Học viên',
   MENTOR: 'Mentor',
   ADMIN: 'Admin',
   MANAGER: 'Quản lý'

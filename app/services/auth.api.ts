@@ -8,6 +8,7 @@ import type { LoginRequest, RegisterRequest } from '@/types/form/auth'
 const AUTH_ENDPOINTS = {
   login: 'auth/login',
   register: 'auth/register',
+  refreshToken: 'auth/refresh-token',
   logout: 'auth/logout'
 } as const
 
@@ -17,6 +18,9 @@ const defaultAuthApi = {
 
   register: async (payload: RegisterRequest): Promise<ApiResponse<AuthApiResponse>> =>
     (await http.post<ApiResponse<AuthApiResponse>>(AUTH_ENDPOINTS.register, payload)).data,
+
+  refreshToken: async (): Promise<ApiResponse<AuthApiResponse>> =>
+    (await http.post<ApiResponse<AuthApiResponse>>(AUTH_ENDPOINTS.refreshToken, {})).data,
 
   logout: async (): Promise<ApiResponse<null>> =>
     (await http.post<ApiResponse<null>>(AUTH_ENDPOINTS.logout, {})).data

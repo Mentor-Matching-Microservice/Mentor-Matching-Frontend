@@ -1,18 +1,20 @@
 import type { Gender, PageQueryParams, PageResponse } from '@/types/api/common'
 import type { UserStatus } from '@/types/models/user'
 
-export type UserRoleApiResponse = 'LEARNER' | 'MENTOR' | 'ADMIN' | 'MANAGER'
+export type UserRoleApiResponse = 'LEARNER' | 'LEANER' | 'MENTOR' | 'ADMIN' | 'MANAGER'
 
 export type UserTypeApiResponse = 'STUDENT' | 'PARENT' | 'UNIVERSITY_STUDENT' | 'WORKING_ADULT'
 
 export type CurrentUserApiResponse = {
-  id: number
+  id?: number | string
+  userId?: string | number
   fullName: string
-  email: string
+  email?: string
   phone: string
-  role: UserRoleApiResponse
+  role?: UserRoleApiResponse
+  roles?: UserRoleApiResponse[]
   userType: UserTypeApiResponse | null
-  status: UserStatus
+  status?: UserStatus
 }
 
 export type UpdateCurrentUserRequest = {

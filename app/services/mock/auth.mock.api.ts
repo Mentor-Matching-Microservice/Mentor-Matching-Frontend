@@ -77,7 +77,7 @@ function buildAuthResponse(email: string, user: CurrentUser): AuthApiResponse {
       id: Number(user.id),
       email: user.email,
       fullName: user.fullName,
-      role: (user.roles[0] ?? ROLES.LEARNER) as AuthApiResponse['user']['role']
+      role: (user.roles[0] ?? ROLES.LEARNER) as NonNullable<AuthApiResponse['user']>['role']
     }
   }
 }

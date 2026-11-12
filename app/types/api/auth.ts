@@ -1,7 +1,7 @@
 import type { UserRoleApiResponse, UserTypeApiResponse } from '@/types/api/user'
 
 export type AuthUserApiResponse = {
-  id: number
+  id: number | string
   fullName: string
   email: string
   role: UserRoleApiResponse
@@ -11,7 +11,7 @@ export type AuthApiResponse = {
   accessToken: string
   accessTokenExpiresIn: number
   refreshTokenExpiresIn: number
-  user: AuthUserApiResponse
+  user?: AuthUserApiResponse
 }
 
 export type RegisterApiRequest = {
