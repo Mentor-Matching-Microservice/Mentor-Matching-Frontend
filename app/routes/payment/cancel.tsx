@@ -11,6 +11,7 @@ import {
 import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
+import { BookingHoldCountdown } from '@/components/BookingHoldCountdown'
 import { EmptyState } from '@/components/EmptyState'
 import { ScreenErrorState } from '@/components/ScreenErrorState'
 import { Badge } from '@/components/ui/badge'
@@ -347,6 +348,15 @@ export default function PaymentCancelPage() {
           >
             {relatedBooking ? (
               <>
+                {relatedBooking.status === 'PENDING' && (
+                  <div className='mb-3'>
+                    <BookingHoldCountdown
+                      createdAt={relatedBooking.createdAt}
+                      holdExpiresAt={relatedBooking.holdExpiresAt}
+                      variant='card'
+                    />
+                  </div>
+                )}
                 <SummaryRow label='Mentor' value={relatedBooking.mentorName} emphasize />
                 <SummaryRow
                   label='Môn học'

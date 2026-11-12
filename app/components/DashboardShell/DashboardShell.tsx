@@ -2,6 +2,7 @@ import { LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 
+import { NotificationBell } from '@/components/Notification/NotificationBell'
 import { buttonVariants } from '@/components/ui/button'
 import { path } from '@/config/path'
 import type { DashboardNavItem } from '@/constants/dashboard-nav'
@@ -134,6 +135,7 @@ export function DashboardShell({
             </Link>
 
             <div className='flex items-center gap-2'>
+              <NotificationBell />
               <Link
                 className={cn(
                   buttonVariants({ size: 'sm', variant: 'outline' }),

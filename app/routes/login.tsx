@@ -164,12 +164,17 @@ export default function LoginPage() {
                   <label className='text-ink text-sm font-semibold' htmlFor='password'>
                     Mật khẩu
                   </label>
-                  <Link
-                    className='text-primary text-sm font-medium hover:underline'
-                    to='/forgot-password'
+                  <button
+                    type='button'
+                    onClick={() =>
+                      alert(
+                        'Để đặt lại mật khẩu hoặc nhận tài khoản demo trong môi trường phát triển, vui lòng liên hệ quản trị viên qua email: admin@mentormatching.vn'
+                      )
+                    }
+                    className='text-primary text-sm font-medium hover:underline cursor-pointer'
                   >
                     Quên mật khẩu?
-                  </Link>
+                  </button>
                 </div>
                 <div className='relative'>
                   <Lock className='text-muted absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2' />
@@ -205,31 +210,38 @@ export default function LoginPage() {
               ) : null}
             </form>
 
-            <p className='text-muted mt-10 text-center text-sm'>
-              Chưa có tài khoản?{' '}
-              <Link className='text-primary font-bold hover:underline' to='/register'>
-                Đăng ký ngay
+            <div className='mt-8 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-center text-xs text-blue-900'>
+              <p className='font-semibold'>Tài khoản thử nghiệm sẵn có:</p>
+              <p className='mt-1 text-blue-800'>
+                Học viên: <span className='font-mono font-bold'>account01@example.com</span> | Mật khẩu: <span className='font-mono font-bold'>Password123!@#</span>
+              </p>
+            </div>
+
+            <p className='text-muted mt-6 text-center text-sm'>
+              Muốn trở thành người cố vấn?{' '}
+              <Link className='text-primary font-bold hover:underline' to={path.becomeMentor}>
+                Đăng ký làm Mentor
               </Link>
             </p>
 
-            <div className='border-line mt-12 flex justify-center gap-8 border-t pt-8'>
+            <div className='border-line mt-10 flex justify-center gap-8 border-t pt-8'>
+              <Link
+                className='text-muted hover:text-primary text-sm font-medium transition'
+                to={path.home}
+              >
+                Trang chủ
+              </Link>
               <Link
                 className='text-muted hover:text-primary text-sm font-medium transition'
                 to={path.discover}
               >
-                Khám phá Mentor
+                Tìm kiếm Mentor
               </Link>
               <Link
                 className='text-muted hover:text-primary text-sm font-medium transition'
-                to='/help'
+                to={path.becomeMentor}
               >
-                Hỗ trợ
-              </Link>
-              <Link
-                className='text-muted hover:text-primary text-sm font-medium transition'
-                to='/terms'
-              >
-                Điều khoản
+                Gia nhập giảng dạy
               </Link>
             </div>
           </motion.div>

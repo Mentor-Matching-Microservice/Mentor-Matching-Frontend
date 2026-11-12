@@ -224,6 +224,9 @@ const BookingSidebar = ({
               <dt>Tạm tính</dt>
               <dd>{resolvedPrice !== null ? formatPrice(resolvedPrice) : 'Chưa có'}</dd>
             </div>
+            <p className='text-muted pt-1 text-[11px] leading-relaxed'>
+              * Buổi học sẽ được giữ chỗ tự động trong 15 phút sau khi gửi yêu cầu để bạn hoàn tất thanh toán.
+            </p>
           </dl>
         </div>
 

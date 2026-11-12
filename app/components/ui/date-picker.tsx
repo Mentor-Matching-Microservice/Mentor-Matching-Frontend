@@ -117,10 +117,15 @@ export function DatePicker({
       </button>
 
       {open ? (
-        <div className='absolute top-full left-0 z-[110] mt-2 w-[320px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_22px_60px_rgba(15,23,42,0.16)] ring-1 ring-slate-200/80'>
+        <div
+          aria-label='Lịch chọn ngày'
+          className='absolute top-full left-0 z-[110] mt-2 w-[320px] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_22px_60px_rgba(15,23,42,0.16)] ring-1 ring-slate-200/80'
+          role='dialog'
+        >
           <div className='mb-4 flex items-center justify-between gap-2'>
             <button
-              className='flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50'
+              aria-label='Tháng trước'
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400'
               type='button'
               onClick={() =>
                 setViewDate((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))
@@ -132,7 +137,8 @@ export function DatePicker({
               {getMonthLabel(viewDate)}
             </p>
             <button
-              className='flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50'
+              aria-label='Tháng sau'
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400'
               type='button'
               onClick={() =>
                 setViewDate((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))
@@ -159,8 +165,10 @@ export function DatePicker({
 
               return (
                 <button
+                  aria-label={formatDisplayDate(isoDate)}
+                  aria-pressed={isSelected}
                   className={cn(
-                    'flex h-10 items-center justify-center rounded-lg text-sm transition',
+                    'flex h-10 items-center justify-center rounded-lg text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     isSelected
                       ? 'bg-primary shadow-soft text-white'
                       : inCurrentMonth

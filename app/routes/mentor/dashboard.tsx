@@ -38,7 +38,7 @@ const statCards: MentorDashboardStat[] = [
   {
     label: 'Học viên',
     value: '12',
-    helper: 'View list',
+    helper: 'Xem danh sách',
     helperClassName: 'text-blue-700',
     href: path.mentorPanel.students
   },
@@ -55,7 +55,7 @@ const upcomingRows = [
     subjectLabel: 'Toán 10',
     timeLabel: '19:30 - 21:00',
     dayLabel: 'Hôm nay',
-    statusLabel: 'Paid/Confirmed',
+    statusLabel: 'Đã xác nhận',
     actionLabel: 'Vào lớp học',
     actionVariant: 'default' as const
   },
@@ -65,7 +65,7 @@ const upcomingRows = [
     subjectLabel: 'Toán 10',
     timeLabel: '19:30 - 21:00',
     dayLabel: 'Hôm nay',
-    statusLabel: 'Paid/Confirmed',
+    statusLabel: 'Đã xác nhận',
     actionLabel: 'Vào lớp học',
     actionVariant: 'default' as const
   },
@@ -75,7 +75,7 @@ const upcomingRows = [
     subjectLabel: 'Toán 10',
     timeLabel: '19:30 - 21:00',
     dayLabel: 'Hôm nay',
-    statusLabel: 'Paid/Confirmed',
+    statusLabel: 'Đã xác nhận',
     actionLabel: 'Vào lớp học',
     actionVariant: 'default' as const
   },
@@ -85,7 +85,7 @@ const upcomingRows = [
     subjectLabel: 'Toán 10',
     timeLabel: '19:30 - 21:00',
     dayLabel: 'Hôm nay',
-    statusLabel: 'Paid/Confirmed',
+    statusLabel: 'Đã xác nhận',
     actionLabel: 'Vào lớp học',
     actionVariant: 'default' as const
   }
@@ -120,14 +120,18 @@ const studentRows = [
 
 export default function MentorDashboardPage() {
   return (
-    <DashboardPage className='space-y-8 md:space-y-10' title=''>
+    <DashboardPage
+      className='space-y-8 md:space-y-10'
+      description='Theo dõi lịch dạy, thu nhập và danh sách học viên đang đồng hành.'
+      title='Tổng quan Cố vấn'
+    >
       <div className='space-y-6'>
         <div className='flex flex-wrap items-center gap-2 text-sm text-slate-500'>
           <Link className='hover:text-primary transition' to={path.home}>
-            Home
+            Trang chủ
           </Link>
           <ChevronRight size={14} />
-          <span className='text-ink font-medium'>Mentor Dashboard</span>
+          <span className='text-ink font-medium'>Bảng điều khiển Mentor</span>
         </div>
 
         <section className='grid gap-4 xl:grid-cols-3'>
@@ -188,10 +192,11 @@ export default function MentorDashboardPage() {
 
                 <div className='md:justify-self-end'>
                   <Button
+                    asChild
                     className='h-9 rounded-lg px-4 text-sm font-medium'
                     variant={row.actionVariant}
                   >
-                    {row.actionLabel}
+                    <Link to={path.mentorPanel.schedule}>{row.actionLabel}</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -212,13 +217,13 @@ export default function MentorDashboardPage() {
                     Học viên
                   </TableHead>
                   <TableHead className='h-12 text-[0.95rem] font-medium tracking-normal text-slate-800 normal-case'>
-                    Buổi lọt
+                    Môn học
                   </TableHead>
                   <TableHead className='h-12 text-[0.95rem] font-medium tracking-normal text-slate-800 normal-case'>
-                    Start từ đầu
+                    Ngày bắt đầu
                   </TableHead>
                   <TableHead className='h-12 text-[0.95rem] font-medium tracking-normal text-slate-800 normal-case'>
-                    Last session
+                    Buổi gần nhất
                   </TableHead>
                 </TableRow>
               </TableHeader>

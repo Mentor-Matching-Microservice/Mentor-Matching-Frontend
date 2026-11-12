@@ -1,3 +1,4 @@
+import { useEffect, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
@@ -36,15 +37,48 @@ export function MentorVerificationDetailModal({
   onOpenChange
 }: MentorVerificationDetailModalProps) {
   const { data: verification, isLoading } = useAdminMentorVerificationDetailQuery(verificationId)
+  const titleId = useId()
+
+  useEffect(() => {
+    if (verificationId === null) return
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onOpenChange(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [verificationId, onOpenChange])
 
   if (typeof document === 'undefined' || verificationId === null) return null
 
   return createPortal(
-    <div className='fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 p-4'>
-      <div className='animate-in fade-in zoom-in relative flex max-h-[85vh] w-full max-w-[640px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)] duration-200'>
+    <div
+      className='fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/60 p-4'
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onOpenChange(false)
+        }
+      }}
+    >
+      <div
+        aria-labelledby={titleId}
+        aria-modal='true'
+        className='animate-in fade-in zoom-in relative flex max-h-[85vh] w-full max-w-[640px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)] duration-200'
+        role='dialog'
+      >
         <button
           aria-label='Đóng'
-          className='absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600'
+          className='absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400'
           onClick={() => onOpenChange(false)}
           type='button'
         >
@@ -58,7 +92,7 @@ export function MentorVerificationDetailModal({
             <>
               <div className='mb-5 flex flex-wrap items-start justify-between gap-3 pr-8'>
                 <div>
-                  <h3 className='text-ink text-xl font-bold tracking-tight'>
+                  <h3 className='text-ink text-xl font-bold tracking-tight' id={titleId}>
                     {verification.accountFullName || verification.fullName}
                   </h3>
                   {verification.accountEmail ? (

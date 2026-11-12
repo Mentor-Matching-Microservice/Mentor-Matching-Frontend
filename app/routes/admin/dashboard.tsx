@@ -63,8 +63,8 @@ const systemHealth = [
   },
   {
     label: 'Thiết lập vận hành',
-    value: 'Một phần thủ công',
-    helper: 'Reports và payment operations vẫn cần backend rõ hơn trước khi mở cấu hình trực tiếp.'
+    value: 'Tự động',
+    helper: 'Theo dõi báo cáo và quy trình đối soát thanh toán tự động qua PayOS.'
   }
 ] as const
 
@@ -121,7 +121,7 @@ export default function AdminDashboardPage() {
             value={statsOverview ? `${Math.round(statsOverview.completionRate * 100)}%` : '—'}
           />
           <WorkspaceMetricCard
-            helper='Tổng giao dịch đã thanh toán qua Stripe'
+            helper='Tổng giao dịch đã thanh toán thành công qua PayOS'
             icon={DollarSign}
             label='Doanh thu'
             tone='warning'

@@ -3,6 +3,7 @@ import { Mail, Search, ShieldAlert } from 'lucide-react'
 
 import { DashboardPage } from '@/components/DashboardPage'
 import { EmptyState } from '@/components/EmptyState'
+import { ScreenErrorState } from '@/components/ScreenErrorState'
 import { StatusBadge } from '@/components/StatusBadge'
 import { WorkspaceMetricCard } from '@/components/WorkspaceMetricCard'
 import { WorkspaceNotice } from '@/components/WorkspaceNotice'
@@ -12,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Table,
   TableBody,
@@ -70,7 +72,12 @@ export default function AdminUsersPage() {
   const [banId, setBanId] = useState<number | null>(null)
   const [unbanId, setUnbanId] = useState<number | null>(null)
 
-  const { data: usersData } = useAdminUsersQuery({
+  const {
+    data: usersData,
+    isLoading,
+    isError,
+    refetch
+  } = useAdminUsersQuery({
     search: searchQuery || undefined,
     role: roleFilter === 'ALL' ? undefined : roleFilter,
     status: statusFilter === 'ALL' ? undefined : statusFilter,
@@ -179,7 +186,17 @@ export default function AdminUsersPage() {
           title='Danh sách người dùng'
           description='Xem tên, vai trò, loại tài khoản, trạng thái và khóa/mở lại tài khoản trực tiếp tại đây.'
         >
-          {users.length === 0 ? (
+          {isLoading ? (
+            <div className='flex justify-center items-center py-12'>
+              <Spinner label='Đang tải danh sách người dùng...' size='lg' />
+            </div>
+          ) : isError ? (
+            <ScreenErrorState
+              description='Không thể tải danh sách người dùng lúc này. Vui lòng thử lại.'
+              onRetry={() => refetch()}
+              title='Lỗi tải dữ liệu người dùng'
+            />
+          ) : users.length === 0 ? (
             <EmptyState
               description='Thử đổi từ khóa, vai trò hoặc trạng thái để quay lại một danh sách người dùng phù hợp hơn.'
               title='Không tìm thấy người dùng'

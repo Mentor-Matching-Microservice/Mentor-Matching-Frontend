@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Star } from 'lucide-react'
 import { useForm, Controller } from 'react-hook-form'
@@ -43,6 +43,7 @@ export function ReviewFormModal({
 }: ReviewFormModalProps) {
   const [hoveredStar, setHoveredStar] = useState<number>(0)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+  const titleId = useId()
 
   const {
     control,
@@ -58,8 +59,24 @@ export function ReviewFormModal({
     if (open) {
       reset(initialData || { rating: 5, comment: '' })
       setHoveredStar(0)
+
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && !isSubmitting && !isDeleting) {
+          onOpenChange(false)
+        }
+      }
+
+      document.addEventListener('keydown', handleKeyDown)
+
+      return () => {
+        document.body.style.overflow = originalOverflow
+        document.removeEventListener('keydown', handleKeyDown)
+      }
     }
-  }, [open, initialData, reset])
+  }, [open, initialData, reset, isSubmitting, isDeleting, onOpenChange])
 
   const handleClose = () => {
     onOpenChange(false)
@@ -68,15 +85,31 @@ export function ReviewFormModal({
   if (typeof document === 'undefined' || !open) return null
 
   return createPortal(
-    <div className='fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6'>
-      <div className='animate-in fade-in zoom-in-95 max-h-[calc(100vh-32px)] w-full max-w-[600px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)] duration-200 md:max-h-[calc(100vh-56px)]'>
+    <div
+      className='fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6'
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting && !isDeleting) {
+          handleClose()
+        }
+      }}
+    >
+      <div
+        aria-labelledby={titleId}
+        aria-modal='true'
+        className='animate-in fade-in zoom-in-95 max-h-[calc(100vh-32px)] w-full max-w-[600px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)] duration-200 md:max-h-[calc(100vh-56px)]'
+        role='dialog'
+      >
         <div className='flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 md:px-7 md:py-5'>
-          <h3 className='text-ink text-[1.5rem] font-bold tracking-tight md:text-[1.7rem]'>
+          <h3
+            className='text-ink text-[1.5rem] font-bold tracking-tight md:text-[1.7rem]'
+            id={titleId}
+          >
             {title}
           </h3>
           <button
             aria-label='Đóng modal'
-            className='flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900'
+            className='flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400'
+            disabled={isSubmitting || isDeleting}
             onClick={handleClose}
             type='button'
           >

@@ -59,8 +59,8 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link className='hover:text-primary transition' to={path.admin.root}>
-                  Admin
+                <Link className='hover:text-primary transition' to={path.becomeMentor}>
+                  Đăng ký Mentor
                 </Link>
               </li>
             </ul>

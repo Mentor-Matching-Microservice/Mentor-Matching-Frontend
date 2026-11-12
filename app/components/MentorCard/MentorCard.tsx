@@ -96,7 +96,10 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
                   {mentor.name}
                 </Link>
                 {mentor.rating !== null && mentor.rating !== undefined ? (
-                  <span className='shrink-0 text-base font-semibold text-amber-600'>
+                  <span
+                    className='shrink-0 text-base font-semibold text-amber-600'
+                    aria-label={`Đánh giá ${mentor.rating.toFixed(1)} trên 5 sao`}
+                  >
                     ★ {mentor.rating.toFixed(1)}
                   </span>
                 ) : (
@@ -105,18 +108,23 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
                   </span>
                 )}
               </div>
-              {mentor.verificationStatus === 'VERIFIED' || mentor.approvalStatus === 'APPROVED' ? (
-                <div className='mt-0.5 flex flex-wrap gap-1'>
-                  {mentor.verificationStatus === 'VERIFIED' ? (
-                    <Badge className='px-1.5 py-0 text-[10px]' variant='info'>
-                      Đã xác minh
-                    </Badge>
-                  ) : null}
-                  {mentor.approvalStatus === 'APPROVED' ? (
-                    <Badge className='px-1.5 py-0 text-[10px]' variant='success'>
-                      Đã duyệt
-                    </Badge>
-                  ) : null}
+              {mentor.verificationStatus === 'VERIFIED' && mentor.approvalStatus === 'APPROVED' ? (
+                <div className='mt-1 flex flex-wrap gap-1'>
+                  <Badge className='px-2 py-0.5 text-[10px] font-semibold tracking-wide' variant='success'>
+                    ✓ Cố vấn đã chứng thực
+                  </Badge>
+                </div>
+              ) : mentor.verificationStatus === 'VERIFIED' ? (
+                <div className='mt-1 flex flex-wrap gap-1'>
+                  <Badge className='px-1.5 py-0 text-[10px]' variant='info'>
+                    Đã xác minh KYC
+                  </Badge>
+                </div>
+              ) : mentor.approvalStatus === 'APPROVED' ? (
+                <div className='mt-1 flex flex-wrap gap-1'>
+                  <Badge className='px-1.5 py-0 text-[10px]' variant='success'>
+                    Đã kiểm duyệt
+                  </Badge>
                 </div>
               ) : null}
             </div>
@@ -170,7 +178,7 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
                       buttonVariants({ size: 'sm' }),
                       'h-9 shrink-0 rounded-lg px-3.5 text-sm text-white! hover:text-white!'
                     )}
-                    to={profileHref}
+                    to={`${profileHref}?offeringId=${encodeURIComponent(offering.id)}`}
                   >
                     Đặt lịch
                   </Link>

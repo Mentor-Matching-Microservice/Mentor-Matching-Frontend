@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { useMemo, useState } from 'react'
-import { useParams } from 'react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, useSearchParams } from 'react-router'
 
 import BookingSidebar from '@/components/BookingSidebar'
 import { EmptyState } from '@/components/EmptyState'
@@ -24,13 +24,21 @@ import type { ErrorResponse } from '@/types/api/common'
 
 const MentorProfile = () => {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
   const mentorId = parseMentorId(id)
   const mentorProfileQuery = useMentorProfileQuery(mentorId)
   const mentor = useMemo(
     () => (mentorProfileQuery.data ? mapMentorProfileToViewModel(mentorProfileQuery.data) : null),
     [mentorProfileQuery.data]
   )
-  const [selectedOfferingIdState, setSelectedOfferingId] = useState<string>()
+  const urlOfferingId = searchParams.get('offeringId') ?? undefined
+  const [selectedOfferingIdState, setSelectedOfferingId] = useState<string | undefined>(urlOfferingId)
+
+  useEffect(() => {
+    if (urlOfferingId) {
+      setSelectedOfferingId(urlOfferingId)
+    }
+  }, [urlOfferingId])
   const mentorCalendar = useMentorProfileCalendar({
     mentorId
   })

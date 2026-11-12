@@ -3,12 +3,14 @@ import { ExternalLink, Search, ShieldCheck } from 'lucide-react'
 
 import { DashboardPage } from '@/components/DashboardPage'
 import { EmptyState } from '@/components/EmptyState'
+import { ScreenErrorState } from '@/components/ScreenErrorState'
 import { StatusBadge } from '@/components/StatusBadge'
 import { StatusFilterPills } from '@/components/StatusFilterPills'
 import { WorkspacePanel } from '@/components/WorkspacePanel'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Spinner } from '@/components/ui/spinner'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { ReasonModal } from '@/components/ui/reason-modal'
 import { useAdminMentorsQuery } from '@/hooks/queries/admin/useAdminMentorsQuery'
@@ -49,21 +51,36 @@ export default function AdminMentorsPage() {
   const [viewVerificationId, setViewVerificationId] = useState<number | null>(null)
 
   // Queries
-  const { data: verificationsData } = useAdminMentorVerificationsQuery({
+  const {
+    data: verificationsData,
+    isLoading: isVerificationsLoading,
+    isError: isVerificationsError,
+    refetch: refetchVerifications
+  } = useAdminMentorVerificationsQuery({
     status: 'PENDING',
     page: 1,
     size: 50
   })
   const verifications = verificationsData?.data || []
 
-  const { data: approvalsData } = useAdminMentorsQuery({
+  const {
+    data: approvalsData,
+    isLoading: isApprovalsLoading,
+    isError: isApprovalsError,
+    refetch: refetchApprovals
+  } = useAdminMentorsQuery({
     approvalStatus: 'PENDING',
     page: 1,
     size: 50
   })
   const approvals = approvalsData?.data || []
 
-  const { data: directoryData } = useAdminMentorsQuery({
+  const {
+    data: directoryData,
+    isLoading: isDirectoryLoading,
+    isError: isDirectoryError,
+    refetch: refetchDirectory
+  } = useAdminMentorsQuery({
     approvalStatus:
       directoryFilter === 'ALL' ? undefined : (directoryFilter as MentorApprovalStatusApiResponse),
     search: searchQuery,
@@ -180,7 +197,17 @@ export default function AdminMentorsPage() {
           title='Chờ duyệt CCCD / Danh tính'
           description='Hàng chờ duyệt thông tin định danh của mentor (Căn cước công dân, hộ chiếu, ảnh chân dung).'
         >
-          {verifications.length === 0 ? (
+          {isVerificationsLoading ? (
+            <div className='flex justify-center items-center py-8'>
+              <Spinner label='Đang tải hàng chờ duyệt danh tính...' />
+            </div>
+          ) : isVerificationsError ? (
+            <ScreenErrorState
+              description='Không thể tải hàng chờ duyệt danh tính lúc này.'
+              onRetry={() => refetchVerifications()}
+              title='Lỗi tải dữ liệu'
+            />
+          ) : verifications.length === 0 ? (
             <EmptyState
               description='Không có yêu cầu duyệt danh tính nào đang chờ xử lý.'
               title='Trống'
@@ -239,7 +266,17 @@ export default function AdminMentorsPage() {
           title='Chờ duyệt lên sàn (Profile)'
           description='Hàng chờ duyệt hồ sơ năng lực, kinh nghiệm, môn học để mentor có thể bắt đầu nhận học viên.'
         >
-          {approvals.length === 0 ? (
+          {isApprovalsLoading ? (
+            <div className='flex justify-center items-center py-8'>
+              <Spinner label='Đang tải hàng chờ duyệt hồ sơ...' />
+            </div>
+          ) : isApprovalsError ? (
+            <ScreenErrorState
+              description='Không thể tải hàng chờ duyệt hồ sơ lúc này.'
+              onRetry={() => refetchApprovals()}
+              title='Lỗi tải dữ liệu'
+            />
+          ) : approvals.length === 0 ? (
             <EmptyState
               description='Không có yêu cầu duyệt hồ sơ nào đang chờ xử lý.'
               title='Trống'
@@ -325,7 +362,17 @@ export default function AdminMentorsPage() {
             </div>
           </div>
 
-          {directory.length === 0 ? (
+          {isDirectoryLoading ? (
+            <div className='flex justify-center items-center py-12'>
+              <Spinner label='Đang tải danh sách mentor...' size='lg' />
+            </div>
+          ) : isDirectoryError ? (
+            <ScreenErrorState
+              description='Không thể tải danh sách mentor lúc này.'
+              onRetry={() => refetchDirectory()}
+              title='Lỗi tải dữ liệu mentor'
+            />
+          ) : directory.length === 0 ? (
             <EmptyState
               description='Hãy thử đổi từ khóa hoặc quay lại trạng thái khác để xem thêm mentor phù hợp.'
               title='Không tìm thấy mentor phù hợp'

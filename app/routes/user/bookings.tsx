@@ -17,6 +17,7 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
 import { DashboardPage } from '@/components/DashboardPage'
+import { BookingHoldCountdown } from '@/components/BookingHoldCountdown'
 import { ScreenErrorState } from '@/components/ScreenErrorState'
 import { StatusBadge } from '@/components/StatusBadge'
 import { StatusFilterPills } from '@/components/StatusFilterPills'
@@ -522,6 +523,13 @@ export default function UserBookingsPage() {
                             {booking.subjectName} · {booking.gradeName}
                           </h2>
                           <StatusBadge kind='booking' status={booking.status} />
+                          {booking.status === 'PENDING' && (
+                            <BookingHoldCountdown
+                              holdExpiresAt={booking.holdExpiresAt}
+                              createdAt={booking.createdAt}
+                              variant='pill'
+                            />
+                          )}
                           {isCreatedBooking ? <Badge variant='success'>Vừa tạo</Badge> : null}
                         </div>
 
@@ -592,6 +600,14 @@ export default function UserBookingsPage() {
                         </div>
 
                         <div className='mt-5 space-y-2.5'>
+                          {booking.status === 'PENDING' && (
+                            <BookingHoldCountdown
+                              className='mb-2'
+                              createdAt={booking.createdAt}
+                              holdExpiresAt={booking.holdExpiresAt}
+                              variant='card'
+                            />
+                          )}
                           {checkoutUrl ? (
                             <a
                               className={buttonVariants({ className: 'w-full', size: 'lg' })}

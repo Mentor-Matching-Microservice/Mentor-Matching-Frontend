@@ -13,6 +13,7 @@ import { useLogout } from '@/hooks/queries/auth/useLogout'
 import { useDashboardPath } from '@/hooks/useDashboardPath'
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/utils/cn'
+import { getInitials } from '@/utils/format'
 
 const Navbar = () => {
   const navigate = useNavigate()
@@ -27,6 +28,12 @@ const Navbar = () => {
   const hasMentorOrAdminRole = userRoles.includes(ROLES.MENTOR) || userRoles.includes(ROLES.ADMIN)
   const showBecomeMentorLink =
     !accessToken || (!currentUserQuery.isLoading && !hasMentorOrAdminRole)
+
+  const userInitials = currentUserQuery.data?.fullName
+    ? getInitials(currentUserQuery.data.fullName)
+    : currentUserQuery.data?.email
+      ? currentUserQuery.data.email.slice(0, 2).toUpperCase()
+      : 'MM'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -118,13 +125,15 @@ const Navbar = () => {
                 <Link
                   className={cn(
                     buttonVariants({
-                      className: 'hidden rounded-full md:flex',
+                      className: 'hidden rounded-full font-bold md:flex',
                       size: 'icon'
                     })
                   )}
                   to={dashboardPath}
+                  aria-label={`Trang tổng quan của ${currentUserQuery.data?.fullName || 'bạn'}`}
+                  title='Bảng điều khiển'
                 >
-                  EM
+                  {userInitials}
                 </Link>
               ) : null}
               <button
@@ -165,6 +174,8 @@ const Navbar = () => {
               })
             )}
             type='button'
+            aria-label={mobileOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
+            aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((open) => !open)}
           >
             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -183,6 +194,20 @@ const Navbar = () => {
             <div className='page-container'>
               <div className='flex flex-col gap-2'>{navLinks}</div>
               <div className='mt-5 flex flex-col gap-3 border-t border-slate-200/50 pt-5'>
+                {accessToken && dashboardPath ? (
+                  <Link
+                    className={cn(
+                      buttonVariants({ className: 'rounded-xl justify-start gap-2.5 font-semibold' })
+                    )}
+                    to={dashboardPath}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <div className='flex h-6 w-6 items-center justify-center rounded-full bg-white/25 text-xs font-bold'>
+                      {userInitials}
+                    </div>
+                    Bảng điều khiển ({currentUserQuery.data?.fullName || 'Tài khoản'})
+                  </Link>
+                ) : null}
                 {showBecomeMentorLink ? (
                   <Link
                     className={cn(buttonVariants({ className: 'rounded-xl', variant: 'outline' }))}

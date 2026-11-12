@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { CalendarDays, Clock3, Info, UserRound, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
@@ -28,6 +28,7 @@ export function MentorRejectBookingModal({
 }: MentorRejectBookingModalProps) {
   const [reason, setReason] = useState('')
   const [alternativeTime, setAlternativeTime] = useState('')
+  const titleId = useId()
 
   const handleClose = () => {
     setReason('')
@@ -35,18 +36,53 @@ export function MentorRejectBookingModal({
     onOpenChange(false)
   }
 
+  useEffect(() => {
+    if (!open) return
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
   if (typeof document === 'undefined' || !open || !session) return null
 
   return createPortal(
-    <div className='fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm md:p-6'>
-      <div className='max-h-[calc(100vh-32px)] w-full max-w-[760px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)] md:max-h-[calc(100vh-56px)]'>
+    <div
+      className='fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm md:p-6'
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose()
+        }
+      }}
+    >
+      <div
+        aria-labelledby={titleId}
+        aria-modal='true'
+        className='max-h-[calc(100vh-32px)] w-full max-w-[760px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_90px_rgba(15,23,42,0.22)] md:max-h-[calc(100vh-56px)]'
+        role='dialog'
+      >
         <div className='flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4 md:px-7 md:py-5'>
-          <h3 className='text-ink text-[1.7rem] font-bold tracking-tight md:text-[1.95rem]'>
+          <h3
+            className='text-ink text-[1.7rem] font-bold tracking-tight md:text-[1.95rem]'
+            id={titleId}
+          >
             Từ chối buổi học
           </h3>
           <button
             aria-label='Đóng modal'
-            className='flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900'
+            className='flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400'
             onClick={handleClose}
             type='button'
           >

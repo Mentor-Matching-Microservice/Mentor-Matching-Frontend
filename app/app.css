@@ -1,7 +1,6 @@
 @import 'tailwindcss';
 @import '../node_modules/tw-animate-css/dist/tw-animate.css';
 @import 'shadcn/tailwind.css';
-@import '@fontsource-variable/geist';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -143,9 +142,6 @@ a {
   .card-hover {
     @apply hover:shadow-lift hover:border-primary/20 transition-all duration-300 hover:-translate-y-1;
   }
-  .text-gradient {
-    @apply from-primary to-secondary bg-gradient-to-r bg-clip-text text-transparent;
-  }
 }
 
 @theme inline {
@@ -173,7 +169,7 @@ a {
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted-foreground);
+  --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
