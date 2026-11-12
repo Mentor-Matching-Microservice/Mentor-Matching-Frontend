@@ -10,12 +10,17 @@ import type {
 
 const LOCATION_ENDPOINTS = {
   cities: 'locations/cities',
-  cityDistricts: (cityId: number) => `locations/cities/${cityId}/districts`
+  cityDetail: (cityId: number) => `locations/cities/${cityId}`,
+  cityDistricts: (cityId: number) => `locations/cities/${cityId}/districts`,
+  districtDetail: (districtId: number) => `locations/districts/${districtId}`
 } as const
 
 const defaultLocationApi = {
   getCities: async (params?: LocationSearchParams): Promise<ApiResponse<CityApiResponse[]>> =>
     (await http.get<ApiResponse<CityApiResponse[]>>(LOCATION_ENDPOINTS.cities, { params })).data,
+
+  getCity: async (cityId: number): Promise<ApiResponse<CityApiResponse>> =>
+    (await http.get<ApiResponse<CityApiResponse>>(LOCATION_ENDPOINTS.cityDetail(cityId))).data,
 
   getDistrictsByCity: async (
     cityId: number,
@@ -25,7 +30,11 @@ const defaultLocationApi = {
       await http.get<ApiResponse<DistrictApiResponse[]>>(LOCATION_ENDPOINTS.cityDistricts(cityId), {
         params
       })
-    ).data
+    ).data,
+
+  getDistrict: async (districtId: number): Promise<ApiResponse<DistrictApiResponse>> =>
+    (await http.get<ApiResponse<DistrictApiResponse>>(LOCATION_ENDPOINTS.districtDetail(districtId)))
+      .data
 }
 
 export const locationApi = env.useMock ? mockLocationApi : defaultLocationApi

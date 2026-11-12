@@ -28,7 +28,15 @@ export function useUpsertCurrentMentorVerificationMutation() {
     },
     onSuccess: ({ verification }) => {
       queryClient.setQueryData(QUERY_KEYS.mentor.currentVerification, verification)
+      queryClient.setQueryData(QUERY_KEYS.mentor.currentVerificationStatus, {
+        verificationStatus: verification.verificationStatus,
+        rejectionReason: verification.rejectionReason
+      })
 
+      void queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.mentor.currentVerificationStatus,
+        exact: true
+      })
       void queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.mentor.currentVerification,
         exact: true
@@ -43,6 +51,10 @@ export function useUpsertCurrentMentorVerificationMutation() {
       })
     },
     onError: () => {
+      void queryClient.invalidateQueries({
+        queryKey: QUERY_KEYS.mentor.currentVerificationStatus,
+        exact: true
+      })
       void queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.mentor.currentVerification,
         exact: true

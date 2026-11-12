@@ -11,6 +11,17 @@ export type MentorApprovalStatusApiResponse =
 
 export type MentorVerificationStatusApiResponse = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED'
 
+export type MentorAccountStatusApiResponse =
+  | 'PENDING_VERIFICATION'
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'BANNED'
+
+export type CurrentMentorVerificationStatusApiResponse = {
+  verificationStatus: MentorVerificationStatusApiResponse | null
+  rejectionReason: string | null
+}
+
 export type MentorProficiencyLevelApiResponse = 'BASIC' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'
 
 export type MentorListSortBy =
@@ -47,11 +58,14 @@ export type MentorLocationApiResponse = {
 
 export type CurrentMentorApiResponse = {
   id: number
-  userId: number
+  userId: number | string
+  accountStatus?: MentorAccountStatusApiResponse | null
   fullName: string
   avatarUrl: string
   avatarMediaId: number | null
   gender: Gender | null
+  hometownCityId?: number | null
+  currentDistrictId?: number | null
   hometown: MentorLocationApiResponse
   currentLocation: MentorLocationApiResponse
   headline: string | null
@@ -105,27 +119,38 @@ export type CurrentMentorOnboardingStatusApiResponse = {
 
 export type MentorListItemApiResponse = {
   id: number
-  userId: number
+  userId: number | string
+  accountStatus?: MentorAccountStatusApiResponse | null
   fullName: string
   avatarUrl: string
+  avatarMediaId?: number | null
   gender: Gender | null
+  hometownCityId?: number | null
+  currentDistrictId?: number | null
   headline: string | null
+  introduction?: string | null
+  teachingStyle?: string | null
   experienceYears: number | null
   currentPosition: string | null
   workplace: string | null
   education: string | null
   major: string | null
   meetingType: MentorMeetingType | null
-  minPrice: number | null
+  minPrice?: number | null
   createdAt: string | null
+  updatedAt?: string | null
 }
 
 export type MentorDetailApiResponse = {
   id: number
-  userId: number
+  userId: number | string
+  accountStatus?: MentorAccountStatusApiResponse | null
   fullName: string
   avatarUrl: string
+  avatarMediaId?: number | null
   gender: Gender | null
+  hometownCityId?: number | null
+  currentDistrictId?: number | null
   hometown: MentorLocationApiResponse
   currentLocation: MentorLocationApiResponse
   headline: string | null
@@ -156,6 +181,7 @@ export type MentorsQueryParams = PageQueryParams<
 
 export type MentorSubjectDetailApiResponse = {
   id: number
+  mentorId?: number
   subjectGradeId: number
   subjectId: number
   subjectName: string
@@ -209,6 +235,7 @@ export type MentorAchievementDetailApiResponse = {
 }
 
 export type SaveCurrentMentorAchievementRequest = {
+  id?: number | null
   title: string
   description?: string | null
   achievementType: MentorAchievementTypeApiResponse
@@ -223,14 +250,14 @@ export type CurrentMentorVerificationApiResponse = {
   fullName: string | null
   idCardNumber: string | null
   idCardFrontUrl: string | null
-  idCardFrontMediaId: number | null
+  idCardFrontMediaId?: number | null
   idCardBackUrl: string | null
-  idCardBackMediaId: number | null
+  idCardBackMediaId?: number | null
   selfieWithIdUrl: string | null
-  selfieWithIdMediaId: number | null
+  selfieWithIdMediaId?: number | null
   verificationStatus: MentorVerificationStatusApiResponse
-  verifiedBy: number | null
-  verifiedAt: string | null
+  verifiedBy?: number | string | null
+  verifiedAt?: string | null
   rejectionReason: string | null
   createdAt: string | null
   updatedAt: string | null
@@ -239,8 +266,11 @@ export type CurrentMentorVerificationApiResponse = {
 export type UpsertCurrentMentorVerificationRequest = {
   fullName: string
   idCardNumber?: string | null
-  idCardFrontMediaId: number
-  idCardBackMediaId: number
+  idCardFrontUrl: string
+  idCardBackUrl: string
+  selfieWithIdUrl?: string | null
+  idCardFrontMediaId?: number | null
+  idCardBackMediaId?: number | null
   selfieWithIdMediaId?: number | null
 }
 
@@ -267,7 +297,7 @@ export type CreateCurrentMentorAvailabilityApiResponse = {
 
 export type AdminMentorListItemApiResponse = {
   id: number
-  userId: number
+  userId: number | string
   fullName: string
   avatarUrl: string
   gender: Gender | null
@@ -280,13 +310,13 @@ export type AdminMentorListItemApiResponse = {
   meetingType: MentorMeetingType | null
   approvalStatus: MentorApprovalStatusApiResponse
   verificationStatus: MentorVerificationStatusApiResponse
-  minPrice: number | null
+  minPrice?: number | null
   createdAt: string | null
 }
 
 export type AdminMentorDetailApiResponse = {
   id: number
-  userId: number
+  userId: number | string
   fullName: string
   email: string
   phone: string
@@ -331,9 +361,10 @@ export type GetAdminMentorsQueryParams = PageQueryParams<
 export type AdminMentorVerificationListItemApiResponse = {
   id: number
   mentorId: number
-  userId: number
-  accountFullName: string
-  accountEmail: string
+  fullName: string
+  userId?: number | string
+  accountFullName?: string
+  accountEmail?: string
   verificationStatus: MentorVerificationStatusApiResponse
   createdAt: string | null
   updatedAt: string | null
@@ -342,23 +373,32 @@ export type AdminMentorVerificationListItemApiResponse = {
 export type AdminMentorVerificationDetailApiResponse = {
   id: number
   mentorId: number
-  userId: number
+  userId: number | string
   accountFullName: string
-  accountEmail: string
-  accountPhone: string
-  approvalStatus: MentorApprovalStatusApiResponse
-  approvalNote: string | null
+  accountEmail?: string | null
+  accountPhone?: string | null
+  approvalStatus?: MentorApprovalStatusApiResponse | null
+  approvalNote?: string | null
   fullName: string
   idCardNumber: string | null
   idCardFrontUrl: string
   idCardBackUrl: string
   selfieWithIdUrl: string | null
   verificationStatus: MentorVerificationStatusApiResponse
-  verifiedBy: number | null
+  verifiedBy: number | string | null
   verifiedAt: string | null
   rejectionReason: string | null
   createdAt: string | null
   updatedAt: string | null
+}
+
+export type MentorVerificationReviewApiResponse = {
+  id: number
+  mentorId: number
+  status: MentorVerificationStatusApiResponse
+  verifiedBy: number | string | null
+  verifiedAt: string | null
+  rejectionReason: string | null
 }
 
 export type ReviewMentorVerificationRequest = {

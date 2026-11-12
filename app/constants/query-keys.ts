@@ -11,6 +11,7 @@ export const QUERY_KEYS = {
   mentor: {
     currentProfile: ['mentor', 'current-profile'] as const,
     currentOnboardingStatus: ['mentor', 'current-onboarding-status'] as const,
+    currentVerificationStatus: ['mentor', 'current-verification-status'] as const,
     currentVerification: ['mentor', 'current-verification'] as const,
     currentSchedule: ['mentor', 'current-schedule'] as const,
     detail: (mentorId: number) => ['mentor', 'detail', mentorId] as const,
@@ -74,7 +75,7 @@ export const QUERY_KEYS = {
   },
   notification: {
     base: ['notification'] as const,
-    list: (params: { page: number; size: number }) => ['notification', 'list', params] as const,
+    list: (params: { page?: number; size?: number }) => ['notification', 'list', params] as const,
     unreadCount: ['notification', 'unreadCount'] as const
   }
 } as const

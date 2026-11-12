@@ -62,6 +62,14 @@ export const mockLocationApi = {
     )
   },
 
+  async getCity(cityId: number): Promise<ApiResponse<CityApiResponse>> {
+    await delay()
+
+    const city = mockCities.find((item) => item.id === cityId) ?? mockCities[0]
+
+    return buildSuccessResponse(city, 'Get city successfully')
+  },
+
   async getDistrictsByCity(
     cityId: number,
     params?: LocationSearchParams
@@ -74,5 +82,13 @@ export const mockLocationApi = {
       filterBySearch(cityDistricts, params?.search),
       'Get districts successfully'
     )
+  },
+
+  async getDistrict(districtId: number): Promise<ApiResponse<DistrictApiResponse>> {
+    await delay()
+
+    const district = mockDistricts.find((item) => item.id === districtId) ?? mockDistricts[0]
+
+    return buildSuccessResponse(district, 'Get district successfully')
   }
 }

@@ -1,3 +1,4 @@
+import { ROLES } from '@/constants/roles'
 import { useAuthStore } from '@/stores/auth-store'
 import { getMockEmailFromToken, mockUsers } from '@/services/mock/auth.mock.api'
 import type { ApiResponse, PageResponse } from '@/types/api/common'
@@ -11,6 +12,7 @@ import type {
   CurrentMentorOnboardingStatusApiResponse,
   CurrentMentorTraitsApiResponse,
   CurrentMentorVerificationApiResponse,
+  CurrentMentorVerificationStatusApiResponse,
   GetAdminMentorVerificationsQueryParams,
   GetAdminMentorsQueryParams,
   MentorsQueryParams,
@@ -22,6 +24,7 @@ import type {
   MentorOptionDetailApiResponse,
   MentorSubjectDetailApiResponse,
   MentorTraitsDetailApiResponse,
+  MentorVerificationReviewApiResponse,
   ReviewMentorApprovalRequest,
   ReviewMentorVerificationRequest,
   SaveCurrentMentorAchievementRequest,
@@ -302,10 +305,13 @@ const adminMentorVerifications: AdminMentorVerificationDetailApiResponse[] = [
 let currentMentorState: CurrentMentorApiResponse = {
   id: 101,
   userId: 2,
+  accountStatus: 'ACTIVE',
   fullName: 'Mentor Test',
   avatarUrl: 'https://example.com/mock-mentor-1.jpg',
   avatarMediaId: 9901,
   gender: 'MALE',
+  hometownCityId: 1,
+  currentDistrictId: 103,
   hometown: { cityId: 1, cityName: 'Ho Chi Minh', districtId: null, districtName: null },
   currentLocation: { cityId: 1, cityName: 'Ho Chi Minh', districtId: 103, districtName: 'Thu Duc' },
   headline: 'Mentor Toan THCS va on thi chuyen cap',
@@ -715,6 +721,16 @@ export const mockMentorApi = {
     )
   },
 
+  async upsertCurrentMentorAchievement(
+    payload: SaveCurrentMentorAchievementRequest
+  ): Promise<ApiResponse<MentorAchievementDetailApiResponse>> {
+    if (payload.id) {
+      return this.updateCurrentMentorAchievement(payload.id, payload)
+    }
+
+    return this.createCurrentMentorAchievement(payload)
+  },
+
   async createCurrentMentorAchievement(
     payload: SaveCurrentMentorAchievementRequest
   ): Promise<ApiResponse<MentorAchievementDetailApiResponse>> {
@@ -793,6 +809,27 @@ export const mockMentorApi = {
     )
   },
 
+  async getCurrentMentorVerificationStatus(): Promise<
+    ApiResponse<CurrentMentorVerificationStatusApiResponse>
+  > {
+    await delay()
+    requireMockSession()
+
+    return buildSuccessResponse(
+      {
+        verificationStatus:
+          currentMentorVerificationState.verificationStatus === 'UNVERIFIED'
+            ? null
+            : currentMentorVerificationState.verificationStatus,
+        rejectionReason:
+          currentMentorVerificationState.verificationStatus === 'REJECTED'
+            ? currentMentorVerificationState.rejectionReason
+            : null
+      },
+      'Get current mentor verification status successfully'
+    )
+  },
+
   async getCurrentMentorVerification(): Promise<ApiResponse<CurrentMentorVerificationApiResponse>> {
     await delay()
     requireMockSession()
@@ -813,15 +850,34 @@ export const mockMentorApi = {
       ...currentMentorVerificationState,
       fullName: payload.fullName,
       idCardNumber: payload.idCardNumber ?? null,
-      idCardFrontMediaId: payload.idCardFrontMediaId,
-      idCardFrontUrl: `https://example.com/media/${payload.idCardFrontMediaId}.jpg`,
-      idCardBackMediaId: payload.idCardBackMediaId,
-      idCardBackUrl: `https://example.com/media/${payload.idCardBackMediaId}.jpg`,
+      idCardFrontMediaId: payload.idCardFrontMediaId ?? currentMentorVerificationState.idCardFrontMediaId ?? null,
+      idCardFrontUrl:
+        payload.idCardFrontUrl ||
+        (payload.idCardFrontMediaId
+          ? `https://example.com/media/${payload.idCardFrontMediaId}.jpg`
+          : currentMentorVerificationState.idCardFrontUrl),
+      idCardBackMediaId: payload.idCardBackMediaId ?? currentMentorVerificationState.idCardBackMediaId ?? null,
+      idCardBackUrl:
+        payload.idCardBackUrl ||
+        (payload.idCardBackMediaId
+          ? `https://example.com/media/${payload.idCardBackMediaId}.jpg`
+          : currentMentorVerificationState.idCardBackUrl),
       selfieWithIdMediaId: payload.selfieWithIdMediaId ?? null,
-      selfieWithIdUrl: payload.selfieWithIdMediaId
-        ? `https://example.com/media/${payload.selfieWithIdMediaId}.jpg`
-        : null,
+      selfieWithIdUrl:
+        payload.selfieWithIdUrl ??
+        (payload.selfieWithIdMediaId
+          ? `https://example.com/media/${payload.selfieWithIdMediaId}.jpg`
+          : null),
       verificationStatus: 'PENDING',
+      rejectionReason: null,
+      updatedAt: new Date().toISOString()
+    }
+
+    currentMentorState = {
+      ...currentMentorState,
+      fullName: payload.fullName,
+      verificationStatus: 'PENDING',
+      verificationRejectionReason: null,
       updatedAt: new Date().toISOString()
     }
 
@@ -993,9 +1049,10 @@ export const mockMentorApi = {
       .map<AdminMentorVerificationListItemApiResponse>((item) => ({
         id: item.id,
         mentorId: item.mentorId,
+        fullName: item.fullName,
         userId: item.userId,
-        accountFullName: item.accountFullName,
-        accountEmail: item.accountEmail,
+        accountFullName: item.accountFullName || item.fullName,
+        accountEmail: item.accountEmail ?? undefined,
         verificationStatus: item.verificationStatus,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt
@@ -1023,16 +1080,42 @@ export const mockMentorApi = {
   async reviewMentorVerification(
     verificationId: number,
     payload: ReviewMentorVerificationRequest
-  ): Promise<ApiResponse<AdminMentorVerificationDetailApiResponse>> {
+  ): Promise<
+    ApiResponse<MentorVerificationReviewApiResponse | AdminMentorVerificationDetailApiResponse>
+  > {
     await delay()
     requireMockSession()
 
     const currentVerificationResponse = await this.getAdminMentorVerificationDetail(verificationId)
+    const status = payload.action === 'VERIFY' ? 'VERIFIED' : 'REJECTED'
+    const rejectionReason = payload.action === 'REJECT' ? (payload.rejectionReason ?? null) : null
+    const verifiedAt = payload.action === 'VERIFY' ? new Date().toISOString() : null
     const nextVerification: AdminMentorVerificationDetailApiResponse = {
       ...currentVerificationResponse.data,
-      verificationStatus: payload.action === 'VERIFY' ? 'VERIFIED' : 'REJECTED',
-      rejectionReason: payload.action === 'REJECT' ? (payload.rejectionReason ?? null) : null,
-      verifiedAt: payload.action === 'VERIFY' ? new Date().toISOString() : null
+      verificationStatus: status,
+      rejectionReason,
+      verifiedAt
+    }
+
+    const index = adminMentorVerifications.findIndex((item) => item.id === verificationId)
+    if (index >= 0) {
+      adminMentorVerifications[index] = nextVerification
+    }
+
+    if (currentMentorVerificationState.id === verificationId) {
+      currentMentorVerificationState = {
+        ...currentMentorVerificationState,
+        verificationStatus: status,
+        rejectionReason,
+        verifiedAt
+      }
+      if (status === 'VERIFIED') {
+        Object.values(mockUsers).forEach((mockUser) => {
+          if (!mockUser.roles.includes(ROLES.MENTOR) && !mockUser.roles.includes(ROLES.ADMIN)) {
+            mockUser.roles = [...mockUser.roles, ROLES.MENTOR]
+          }
+        })
+      }
     }
 
     return buildSuccessResponse(nextVerification, 'Review mentor verification successfully')
