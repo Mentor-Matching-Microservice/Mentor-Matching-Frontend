@@ -15,11 +15,15 @@ export type CreateBookingRequest = {
 
 export type CreateBookingApiResponse = {
   bookingId: number
+  id?: number
+  status?: BookingStatus
+  holdExpiresAt?: string | null
 }
 
 export type BookingApiResponse = {
   id: number
-  studentUserId: number
+  bookingId?: number
+  studentUserId: number | string
   studentName: string
   mentorId: number
   mentorName: string
@@ -35,11 +39,16 @@ export type BookingApiResponse = {
   meetingLink: string | null
   meetingAddress: string | null
   status: BookingStatus
+  holdExpiresAt?: string | null
   note: string | null
-  cancelledBy: number | null
+  cancelledBy: number | string | null
   cancelReason: string | null
   createdAt: string | null
   updatedAt: string | null
+}
+
+export type RejectBookingRequest = {
+  cancelReason: string
 }
 
 export type ForceCancelBookingRequest = {

@@ -9,7 +9,8 @@ import type {
   ForceCancelBookingRequest,
   GetBookingsQueryParams,
   GetMentorBookingsQueryParams,
-  GetMyBookingsQueryParams
+  GetMyBookingsQueryParams,
+  RejectBookingRequest
 } from '@/types/api/booking'
 
 const delay = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -205,7 +206,15 @@ export const mockBookingApi = {
       ...mockBookings
     ]
 
-    return buildCreatedResponse({ bookingId }, 'Create booking successfully')
+    return buildCreatedResponse({ bookingId, id: bookingId }, 'Create booking successfully')
+  },
+
+  async getBookingDetail(bookingId: number): Promise<ApiResponse<BookingApiResponse>> {
+    await delay()
+    requireMockSession()
+
+    const matched = mockBookings.find((booking) => booking.id === bookingId) ?? mockBookings[0]
+    return buildSuccessResponse(matched, 'Get booking successfully')
   },
 
   async getBookings(
@@ -260,6 +269,28 @@ export const mockBookingApi = {
       paginate(filtered, params?.page ?? 1, params?.size ?? 10),
       'Get mentor bookings successfully'
     )
+  },
+
+  async rejectBookingByMentor(
+    bookingId: number,
+    payload: RejectBookingRequest
+  ): Promise<ApiResponse<null>> {
+    await delay()
+    const { user } = requireMockSession()
+
+    mockBookings = mockBookings.map((booking) =>
+      booking.id === bookingId
+        ? {
+            ...booking,
+            status: 'REJECTED',
+            cancelledBy: user.id,
+            cancelReason: payload.cancelReason,
+            updatedAt: new Date().toISOString()
+          }
+        : booking
+    )
+
+    return buildSuccessResponse(null, 'Reject booking successfully')
   },
 
   async completeBookingByMentor(bookingId: number): Promise<ApiResponse<null>> {

@@ -7,7 +7,8 @@ import {
   Clock3,
   Link as LinkIcon,
   NotebookText,
-  Plus
+  Plus,
+  XCircle
 } from 'lucide-react'
 import { Link } from 'react-router'
 
@@ -19,10 +20,12 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { StatusFilterPills } from '@/components/StatusFilterPills'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ReasonModal } from '@/components/ui/reason-modal'
 import { path } from '@/config/path'
 import { BOOKING_STATUS_CONFIG } from '@/constants/booking-status'
 import { useCompleteBookingByMentorMutation } from '@/hooks/queries/booking/useCompleteBookingByMentorMutation'
 import { useCurrentMentorBookingsQuery } from '@/hooks/queries/booking/useCurrentMentorBookingsQuery'
+import { useRejectBookingByMentorMutation } from '@/hooks/queries/booking/useRejectBookingByMentorMutation'
 import { useCurrentMentorScheduleQuery } from '@/hooks/queries/mentor/useCurrentMentorScheduleQuery'
 import type { BookingApiResponse } from '@/types/api/booking'
 import type {
@@ -60,6 +63,7 @@ const bookingStatusFilters: Array<{ key: BookingStatusFilter; label: string }> =
   { key: 'PENDING', label: BOOKING_STATUS_CONFIG.PENDING.label },
   { key: 'CONFIRMED', label: BOOKING_STATUS_CONFIG.CONFIRMED.label },
   { key: 'COMPLETED', label: BOOKING_STATUS_CONFIG.COMPLETED.label },
+  { key: 'REJECTED', label: BOOKING_STATUS_CONFIG.REJECTED.label },
   { key: 'CANCELLED', label: BOOKING_STATUS_CONFIG.CANCELLED.label },
   { key: 'NO_SHOW', label: BOOKING_STATUS_CONFIG.NO_SHOW.label }
 ]
@@ -203,6 +207,7 @@ export function meta() {
 export default function MentorSchedulePage() {
   const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false)
   const [bookingStatusFilter, setBookingStatusFilter] = useState<BookingStatusFilter>('ALL')
+  const [rejectBookingId, setRejectBookingId] = useState<number | null>(null)
   const mentorScheduleQuery = useCurrentMentorScheduleQuery()
   const mentorBookingParams = useMemo(
     () => ({
@@ -217,6 +222,21 @@ export default function MentorSchedulePage() {
     Boolean(mentorScheduleQuery.data?.currentMentor)
   )
   const completeBookingMutation = useCompleteBookingByMentorMutation()
+  const rejectBookingMutation = useRejectBookingByMentorMutation()
+
+  const handleRejectConfirm = (reason: string) => {
+    if (!rejectBookingId) return
+    rejectBookingMutation.mutate(
+      {
+        bookingId: rejectBookingId,
+        payload: { cancelReason: reason }
+      },
+      {
+        onSuccess: () => setRejectBookingId(null),
+        onError: () => setRejectBookingId(null)
+      }
+    )
+  }
 
   const recurringAvailability = useMemo(
     () =>
@@ -439,8 +459,19 @@ export default function MentorSchedulePage() {
                       </p>
                     </div>
 
-                    <div className='flex items-center gap-3'>
+                    <div className='flex flex-wrap items-center gap-3'>
                       <StatusBadge kind='booking' status={session.bookingStatus} />
+                      {session.bookingStatus === 'PENDING' ||
+                      session.bookingStatus === 'CONFIRMED' ? (
+                        <Button
+                          className='h-10 rounded-xl px-4 text-sm font-medium'
+                          onClick={() => setRejectBookingId(session.id)}
+                          variant='outline'
+                        >
+                          <XCircle aria-hidden='true' size={15} />
+                          Từ chối
+                        </Button>
+                      ) : null}
                       {session.bookingStatus === 'CONFIRMED' ? (
                         <Button
                           className='h-10 rounded-xl px-4 text-sm font-medium'
@@ -512,6 +543,17 @@ export default function MentorSchedulePage() {
       <MentorAvailabilityModal
         onOpenChange={setAvailabilityModalOpen}
         open={availabilityModalOpen}
+      />
+
+      <ReasonModal
+        confirmLabel='Xác nhận từ chối'
+        description='Lịch đặt này sẽ chuyển sang trạng thái Bị từ chối và hệ thống sẽ hoàn tiền tự động nếu học viên đã thanh toán.'
+        isConfirming={rejectBookingMutation.isPending}
+        onConfirm={handleRejectConfirm}
+        onOpenChange={(open) => !open && setRejectBookingId(null)}
+        open={!!rejectBookingId}
+        placeholder='Nhập lý do từ chối buổi học...'
+        title='Từ chối buổi học'
       />
     </DashboardPage>
   )
