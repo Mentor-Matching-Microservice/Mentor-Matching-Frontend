@@ -5,7 +5,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { buttonVariants } from '@/components/ui/button'
 import { path } from '@/config/path'
 import type { DashboardNavItem } from '@/constants/dashboard-nav'
-import { useAuthStore } from '@/stores/auth-store'
+import { useLogout } from '@/hooks/queries/auth/useLogout'
 import { cn } from '@/utils/cn'
 
 type DashboardShellProps = {
@@ -24,11 +24,15 @@ export function DashboardShell({
   homeLink = '/'
 }: DashboardShellProps) {
   const navigate = useNavigate()
-  const logout = useAuthStore((state) => state.logout)
+  const logout = useLogout()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch {
+      // Clear the local session even when the server is unavailable.
+    }
     navigate('/')
   }
 

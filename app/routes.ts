@@ -48,6 +48,9 @@ export default [
   ]),
 
   // Auth & template routes
-  layout('routes/guest-layout.tsx', [route('login', 'routes/login.tsx')]),
+  layout('routes/guest-layout.tsx', [
+    route('login', 'routes/login.tsx'),
+    route('register', 'routes/register.tsx')
+  ]),
   route('forbidden', 'routes/forbidden.tsx')
 ] satisfies RouteConfig

@@ -9,6 +9,7 @@ import { buttonVariants } from '@/components/ui/button'
 import { path } from '@/config/path'
 import { ROLES } from '@/constants/roles'
 import { useCurrentUserQuery } from '@/hooks/queries/auth/useCurrentUserQuery'
+import { useLogout } from '@/hooks/queries/auth/useLogout'
 import { useDashboardPath } from '@/hooks/useDashboardPath'
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/utils/cn'
@@ -19,7 +20,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
 
   const accessToken = useAuthStore((state) => state.accessToken)
-  const logout = useAuthStore((state) => state.logout)
+  const logout = useLogout()
   const currentUserQuery = useCurrentUserQuery()
   const dashboardPath = useDashboardPath()
   const userRoles = currentUserQuery.data?.roles ?? []
@@ -40,8 +41,12 @@ const Navbar = () => {
       isActive ? 'text-primary' : 'text-slate-600 hover:text-primary-dark'
     }`
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    try {
+      await logout()
+    } catch {
+      // Clear the local session even when the server is unavailable.
+    }
     setMobileOpen(false)
     navigate('/')
   }
