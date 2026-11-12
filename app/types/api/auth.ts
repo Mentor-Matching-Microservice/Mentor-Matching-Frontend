@@ -1,4 +1,4 @@
-import type { UserRoleApiResponse, UserTypeApiResponse } from '@/types/api/user'
+import type { UserRoleApiResponse } from '@/types/api/user'
 
 export type AuthUserApiResponse = {
   id: number | string
@@ -14,11 +14,13 @@ export type AuthApiResponse = {
   user?: AuthUserApiResponse
 }
 
+export type RegisterApiResponse = {
+  accountId: string
+  status: string
+}
+
 export type RegisterApiRequest = {
-  fullName: string
   email: string
-  phone: string
-  userType: UserTypeApiResponse
   password: string
   confirmPassword: string
 }

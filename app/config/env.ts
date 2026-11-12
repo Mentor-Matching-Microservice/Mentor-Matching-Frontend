@@ -23,7 +23,7 @@ const apiOrigin = apiServerUrl.origin
 const apiBasePath = '/api/v1'
 
 export const env = {
-  useMock: parseBooleanEnv(import.meta.env.VITE_USE_MOCK, true),
+  useMock: parseBooleanEnv(import.meta.env.VITE_USE_MOCK, false),
   apiOrigin,
   apiBasePath,
   apiBaseUrl: `${apiOrigin}${apiBasePath}/`

@@ -8,7 +8,7 @@ export type BookingStatus =
   | 'REJECTED'
   | 'NO_SHOW'
 
-export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUNDED'
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'PARTIALLY_REFUNDED' | 'REFUNDED'
 
 export interface BookingSnapshot {
   learnerName: string

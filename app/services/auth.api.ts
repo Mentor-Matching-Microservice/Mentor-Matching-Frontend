@@ -1,7 +1,7 @@
 import { env } from '@/config/env'
 import http from '@/libs/http'
 import { mockAuthApi } from '@/services/mock/auth.mock.api'
-import type { AuthApiResponse } from '@/types/api/auth'
+import type { AuthApiResponse, RegisterApiResponse } from '@/types/api/auth'
 import type { ApiResponse } from '@/types/api/common'
 import type { LoginRequest, RegisterRequest } from '@/types/form/auth'
 
@@ -16,8 +16,8 @@ const defaultAuthApi = {
   login: async (payload: LoginRequest): Promise<ApiResponse<AuthApiResponse>> =>
     (await http.post<ApiResponse<AuthApiResponse>>(AUTH_ENDPOINTS.login, payload)).data,
 
-  register: async (payload: RegisterRequest): Promise<ApiResponse<AuthApiResponse>> =>
-    (await http.post<ApiResponse<AuthApiResponse>>(AUTH_ENDPOINTS.register, payload)).data,
+  register: async (payload: RegisterRequest): Promise<ApiResponse<RegisterApiResponse>> =>
+    (await http.post<ApiResponse<RegisterApiResponse>>(AUTH_ENDPOINTS.register, payload)).data,
 
   refreshToken: async (): Promise<ApiResponse<AuthApiResponse>> =>
     (await http.post<ApiResponse<AuthApiResponse>>(AUTH_ENDPOINTS.refreshToken, {})).data,

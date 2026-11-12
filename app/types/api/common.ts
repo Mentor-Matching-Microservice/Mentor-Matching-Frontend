@@ -40,7 +40,10 @@ export type PageMeta = Omit<PageResponse<never>, 'data'>
 export type ErrorResponse = {
   code: string
   status: number
-  message: string
-  path: string
-  timestamp: string
+  detail?: string
+  message?: string
+  title?: string
+  instance?: string
+  requestId?: string
+  errors?: { field: string; message: string }[]
 }

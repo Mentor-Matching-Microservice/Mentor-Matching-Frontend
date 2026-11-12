@@ -105,20 +105,21 @@ function normalizePaymentPage(
     : normalizedItems
 
   if (Array.isArray(rawPage)) {
+    const start = (fallbackPage - 1) * fallbackSize
     return {
       page: fallbackPage,
       pageSize: fallbackSize,
       totalPages: Math.max(1, Math.ceil(filteredItems.length / Math.max(1, fallbackSize))),
       totalItems: filteredItems.length,
-      data: filteredItems
+      data: filteredItems.slice(start, start + fallbackSize)
     }
   }
 
   const page =
-    typeof rawPage?.page === 'number'
-      ? rawPage.page
-      : typeof rawPage?.number === 'number'
-        ? rawPage.number + 1
+    typeof rawPage?.number === 'number'
+      ? rawPage.number + 1
+      : typeof rawPage?.page === 'number'
+        ? rawPage.page
         : fallbackPage
   const pageSize = rawPage?.pageSize ?? rawPage?.size ?? fallbackSize
   const totalItems = statusFilter

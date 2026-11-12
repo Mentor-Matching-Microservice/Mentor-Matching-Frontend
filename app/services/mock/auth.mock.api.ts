@@ -1,5 +1,5 @@
 import { ROLES } from '@/constants/roles'
-import type { AuthApiResponse } from '@/types/api/auth'
+import type { AuthApiResponse, RegisterApiResponse } from '@/types/api/auth'
 import type { ApiResponse } from '@/types/api/common'
 import type { LoginRequest, RegisterRequest } from '@/types/form/auth'
 import type { CurrentUser } from '@/types/models/user'
@@ -96,7 +96,7 @@ export const mockAuthApi = {
     return buildSuccessResponse(buildAuthResponse(email, user), 'Login successfully')
   },
 
-  async register(payload: RegisterRequest): Promise<ApiResponse<AuthApiResponse>> {
+  async register(payload: RegisterRequest): Promise<ApiResponse<RegisterApiResponse>> {
     await delay()
 
     const email = payload.email.trim().toLowerCase()
@@ -114,14 +114,14 @@ export const mockAuthApi = {
     mockUsers[email] = {
       id: nextUserId,
       email,
-      fullName: payload.fullName,
+      fullName: email,
       phone: '',
       userType: 'STUDENT',
       status: 'ACTIVE',
       roles: [ROLES.LEARNER]
     }
 
-    return buildCreatedResponse(buildAuthResponse(email, mockUsers[email]), 'Register successfully')
+    return buildCreatedResponse({ accountId: nextUserId, status: 'PENDING_VERIFICATION' }, 'Register successfully')
   },
 
   async refreshToken(): Promise<ApiResponse<AuthApiResponse>> {

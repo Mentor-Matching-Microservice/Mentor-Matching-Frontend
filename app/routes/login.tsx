@@ -39,7 +39,7 @@ export default function LoginPage() {
 
   const getLoginErrorMessage = (error: unknown) => {
     if (isAxiosUnauthorizedError<ErrorResponse>(error)) {
-      return error.response?.data?.message || 'Email hoặc mật khẩu không đúng.'
+      return error.response?.data?.detail || error.response?.data?.message || 'Email hoặc mật khẩu không đúng.'
     }
 
     if (axios.isAxiosError<ErrorResponse>(error) && !error.response) {
