@@ -55,14 +55,16 @@ export const mockMediaApi = {
   },
 
   async confirmUpload(
-    mediaAssetId: number,
+    mediaAssetId: number | string,
     payload: ConfirmMediaUploadRequest
   ): Promise<ApiResponse<MediaAssetApiResponse>> {
     await delay()
+    const numericId = Number.isFinite(Number(mediaAssetId)) ? Number(mediaAssetId) : Date.now()
 
     return buildSuccessResponse(
       {
-        id: mediaAssetId,
+        id: numericId,
+        assetId: String(mediaAssetId),
         provider: 'CLOUDINARY',
         objectKey: payload.objectKey,
         deliveryUrl: payload.deliveryUrl,
@@ -77,5 +79,22 @@ export const mockMediaApi = {
       },
       'Confirm media upload successfully'
     )
+  },
+
+  async getSignedUrl(mediaAssetId: number | string): Promise<ApiResponse<{ url: string }>> {
+    await delay()
+
+    return buildSuccessResponse(
+      {
+        url: `https://example.com/mock/signed/${mediaAssetId}.jpg`
+      },
+      'Get signed URL successfully'
+    )
+  },
+
+  async deleteMedia(): Promise<ApiResponse<null>> {
+    await delay()
+
+    return buildSuccessResponse(null, 'Delete media successfully')
   }
 }

@@ -49,15 +49,18 @@ export function useUploadMediaMutation() {
         formFields: uploadIntent.formFields
       })
 
+      const providerAssetId =
+        providerUpload.asset_id ?? providerUpload.public_id ?? uploadIntent.objectKey
+
       return mediaApi.confirmUpload(uploadIntent.mediaAssetId, {
+        assetId: providerAssetId,
         deliveryUrl: providerUpload.secure_url ?? '',
         etag: providerUpload.etag ?? null,
         fileSizeBytes: providerUpload.bytes ?? file.size,
         height: providerUpload.height ?? null,
         metadataJson: metadata ? JSON.stringify(metadata) : null,
         objectKey: providerUpload.public_id ?? uploadIntent.objectKey,
-        providerAssetId:
-          providerUpload.asset_id ?? providerUpload.public_id ?? uploadIntent.objectKey,
+        providerAssetId,
         version: providerUpload.version === undefined ? null : String(providerUpload.version),
         width: providerUpload.width ?? null
       })

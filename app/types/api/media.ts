@@ -17,7 +17,7 @@ export type CreateMediaUploadIntentRequest = {
 }
 
 export type MediaUploadIntentApiResponse = {
-  mediaAssetId: number
+  mediaAssetId: number | string
   provider: string
   uploadUrl: string
   objectKey: string
@@ -25,6 +25,7 @@ export type MediaUploadIntentApiResponse = {
 }
 
 export type ConfirmMediaUploadRequest = {
+  assetId?: string
   objectKey: string
   providerAssetId: string
   deliveryUrl: string
@@ -38,6 +39,7 @@ export type ConfirmMediaUploadRequest = {
 
 export type MediaAssetApiResponse = {
   id: number
+  assetId?: string
   provider: MediaProviderApiResponse
   objectKey: string
   deliveryUrl: string | null
@@ -52,6 +54,6 @@ export type MediaAssetApiResponse = {
 }
 
 export type ConfirmMediaUploadMutationVariables = {
-  mediaAssetId: number
+  mediaAssetId: number | string
   payload: ConfirmMediaUploadRequest
 }
