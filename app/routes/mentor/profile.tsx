@@ -35,12 +35,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { path } from '@/config/path'
+import { useCatalogOptionsQuery } from '@/hooks/queries/catalog/useCatalogOptionsQuery'
+import { useUploadMediaMutation } from '@/hooks/queries/media/useUploadMediaMutation'
 import { useCurrentMentorProfileQuery } from '@/hooks/queries/mentor/useCurrentMentorProfileQuery'
 import { useCreateCurrentMentorAchievementMutation } from '@/hooks/queries/mentor/useCreateCurrentMentorAchievementMutation'
 import { useDeleteCurrentMentorAchievementMutation } from '@/hooks/queries/mentor/useDeleteCurrentMentorAchievementMutation'
+import { useDeleteCurrentMentorSubjectMutation } from '@/hooks/queries/mentor/useDeleteCurrentMentorSubjectMutation'
+import { useUpdateCurrentMentorAvatarMutation } from '@/hooks/queries/mentor/useUpdateCurrentMentorAvatarMutation'
 import { useUpdateCurrentMentorMutation } from '@/hooks/queries/mentor/useUpdateCurrentMentorMutation'
 import { useUpdateCurrentMentorAchievementMutation } from '@/hooks/queries/mentor/useUpdateCurrentMentorAchievementMutation'
 import { useUpdateCurrentMentorTraitsMutation } from '@/hooks/queries/mentor/useUpdateCurrentMentorTraitsMutation'
+import { useUpsertCurrentMentorSubjectMutation } from '@/hooks/queries/mentor/useUpsertCurrentMentorSubjectMutation'
 import { formatMeetingTypeLabel } from '@/features/mentor-profile/mentor-profile.mapper'
 import type { ErrorResponse } from '@/types/api/common'
 import type {
@@ -371,10 +376,15 @@ export default function MentorProfilePage() {
     refetch: refetchProfile
   } = useCurrentMentorProfileQuery()
   const updateCurrentMentorMutation = useUpdateCurrentMentorMutation()
+  const updateCurrentMentorAvatarMutation = useUpdateCurrentMentorAvatarMutation()
   const updateCurrentMentorTraitsMutation = useUpdateCurrentMentorTraitsMutation()
   const createAchievementMutation = useCreateCurrentMentorAchievementMutation()
   const updateAchievementMutation = useUpdateCurrentMentorAchievementMutation()
   const deleteAchievementMutation = useDeleteCurrentMentorAchievementMutation()
+  const upsertSubjectMutation = useUpsertCurrentMentorSubjectMutation()
+  const deleteSubjectMutation = useDeleteCurrentMentorSubjectMutation()
+  const uploadMediaMutation = useUploadMediaMutation()
+  const { data: catalogOptions } = useCatalogOptionsQuery()
 
   const [activeTab, setActiveTab] = useState<ProfileTabKey>('general')
   const [draftFormValues, setDraftFormValues] = useState<MentorProfileDraft | null>(null)
@@ -388,10 +398,18 @@ export default function MentorProfilePage() {
   const [achievementsErrorMessage, setAchievementsErrorMessage] = useState<string | null>(null)
   const [savingAchievementLocalId, setSavingAchievementLocalId] = useState<string | null>(null)
   const [deletingAchievementLocalId, setDeletingAchievementLocalId] = useState<string | null>(null)
+  const [uploadingAchievementLocalId, setUploadingAchievementLocalId] = useState<string | null>(
+    null
+  )
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [quickAddSubject, setQuickAddSubject] = useState('')
   const [quickAddGrade, setQuickAddGrade] = useState('')
-  const [quickAddPrice, setQuickAddPrice] = useState('200.000')
-  const [quickAddLevel, setQuickAddLevel] = useState('')
+  const [quickAddPrice, setQuickAddPrice] = useState('200000')
+  const [quickAddLevel, setQuickAddLevel] =
+    useState<MentorProficiencyLevelApiResponse>('INTERMEDIATE')
+  const [quickAddTeachingNote, setQuickAddTeachingNote] = useState('')
+  const [offeringsMessage, setOfferingsMessage] = useState<string | null>(null)
+  const [offeringsErrorMessage, setOfferingsErrorMessage] = useState<string | null>(null)
 
   const currentMentor = profileBundle?.currentMentor
   const sourceFormValues = currentMentor ? mapMentorToFormValues(currentMentor) : emptyDraft
@@ -466,7 +484,36 @@ export default function MentorProfilePage() {
   )
 
   const previewPrice = offeringSummaries.find((offering) => offering.active)?.pricePerHour ?? null
-  const canQuickAdd = Boolean(quickAddSubject && quickAddGrade && quickAddLevel && quickAddPrice)
+  const subjectOptions = useMemo(
+    () =>
+      (catalogOptions?.subjects ?? []).map((item) => ({
+        label: item.name,
+        value: String(item.id)
+      })),
+    [catalogOptions?.subjects]
+  )
+  const gradeOptions = useMemo(
+    () =>
+      (catalogOptions?.grades ?? []).map((item) => ({
+        label: item.name,
+        value: String(item.id)
+      })),
+    [catalogOptions?.grades]
+  )
+  const selectedSubjectGradeId = useMemo(
+    () =>
+      catalogOptions?.subjectGrades.find(
+        (item) =>
+          String(item.subjectId) === quickAddSubject && String(item.gradeId) === quickAddGrade
+      )?.id ?? null,
+    [catalogOptions?.subjectGrades, quickAddGrade, quickAddSubject]
+  )
+  const canQuickAdd = Boolean(
+    selectedSubjectGradeId &&
+    quickAddLevel &&
+    Number(String(quickAddPrice).replace(/\D/g, '')) > 0 &&
+    !upsertSubjectMutation.isPending
+  )
 
   const handleFieldChange =
     (field: keyof MentorProfileDraft) =>
@@ -603,19 +650,123 @@ export default function MentorProfilePage() {
     setDeletingAchievementLocalId(null)
   }
 
+  const handleAvatarFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+
+    setSaveSuccessMessage(null)
+    setSubmitErrorMessage(null)
+    setIsUploadingAvatar(true)
+
+    try {
+      const uploadRes = await uploadMediaMutation.mutateAsync({
+        file,
+        purpose: 'AVATAR'
+      })
+      await updateCurrentMentorAvatarMutation.mutateAsync({
+        avatarMediaId: uploadRes.data.id
+      })
+      await refetchProfile()
+      setSaveSuccessMessage('Đã tải lên và đồng bộ ảnh đại diện mới.')
+    } catch (error) {
+      setSubmitErrorMessage(getProfileSaveErrorMessage(error))
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
   const handleAchievementFileChange =
     (localId: string) => async (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0]
+      event.target.value = ''
       if (!file) return
 
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = typeof reader.result === 'string' ? reader.result : ''
-        updateAchievementDraft(localId, { proofUrl: result })
+      setAchievementsSuccessMessage(null)
+      setAchievementsErrorMessage(null)
+      setUploadingAchievementLocalId(localId)
+
+      try {
+        const uploadRes = await uploadMediaMutation.mutateAsync({
+          file,
+          purpose: 'ACHIEVEMENT'
+        })
+        updateAchievementDraft(localId, {
+          proofUrl: uploadRes.data.deliveryUrl ?? ''
+        })
+      } catch (error) {
+        setAchievementsErrorMessage(getProfileSaveErrorMessage(error))
+      } finally {
+        setUploadingAchievementLocalId(null)
       }
-      reader.readAsDataURL(file)
-      event.target.value = ''
     }
+
+  const handleQuickAddOffering = async () => {
+    if (!selectedSubjectGradeId) {
+      setOfferingsErrorMessage('Tổ hợp môn học và cấp lớp này chưa được hỗ trợ.')
+      return
+    }
+
+    const numericPrice = Number(String(quickAddPrice).replace(/\D/g, ''))
+    if (!numericPrice || numericPrice <= 0) {
+      setOfferingsErrorMessage('Học phí mỗi giờ phải lớn hơn 0.')
+      return
+    }
+
+    setOfferingsMessage(null)
+    setOfferingsErrorMessage(null)
+
+    try {
+      await upsertSubjectMutation.mutateAsync({
+        id: null,
+        subjectGradeId: selectedSubjectGradeId,
+        proficiencyLevel: quickAddLevel,
+        teachingNote: quickAddTeachingNote.trim() || null,
+        pricePerHour: numericPrice,
+        active: true
+      })
+      setQuickAddSubject('')
+      setQuickAddGrade('')
+      setQuickAddPrice('200000')
+      setQuickAddTeachingNote('')
+      setOfferingsMessage('Đã thêm môn dạy mới thành công.')
+    } catch (error) {
+      setOfferingsErrorMessage(getProfileSaveErrorMessage(error))
+    }
+  }
+
+  const handleToggleOfferingActive = async (
+    offering: (typeof offeringSummaries)[number]
+  ) => {
+    setOfferingsMessage(null)
+    setOfferingsErrorMessage(null)
+
+    try {
+      await upsertSubjectMutation.mutateAsync({
+        id: offering.id,
+        subjectGradeId: offering.subjectGradeId,
+        proficiencyLevel: offering.proficiencyLevel,
+        teachingNote: offering.teachingNote ?? null,
+        pricePerHour: offering.pricePerHour,
+        active: !offering.active
+      })
+      setOfferingsMessage('Đã cập nhật trạng thái hiển thị môn dạy.')
+    } catch (error) {
+      setOfferingsErrorMessage(getProfileSaveErrorMessage(error))
+    }
+  }
+
+  const handleDeleteOffering = async (mentorSubjectId: number) => {
+    setOfferingsMessage(null)
+    setOfferingsErrorMessage(null)
+
+    try {
+      await deleteSubjectMutation.mutateAsync(mentorSubjectId)
+      setOfferingsMessage('Đã tắt môn dạy khỏi hồ sơ công khai.')
+    } catch (error) {
+      setOfferingsErrorMessage(getProfileSaveErrorMessage(error))
+    }
+  }
 
   const handleSaveAchievement = (draft: AchievementDraft) => {
     const payload = buildAchievementPayload(draft)
@@ -727,12 +878,27 @@ export default function MentorProfilePage() {
                 </div>
               </div>
 
-              <Link to={path.mentorProfile(String(currentMentor.id))}>
-                <Button className='h-11 rounded-xl px-5' variant='outline'>
-                  <Eye size={16} />
-                  Xem hồ sơ công khai
-                </Button>
-              </Link>
+              <div className='flex flex-wrap items-center gap-3'>
+                <label className='inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50'>
+                  <ImagePlus size={16} />
+                  {isUploadingAvatar ? 'Đang tải ảnh...' : 'Đổi ảnh đại diện'}
+                  <input
+                    accept='image/png,image/jpeg,image/webp'
+                    className='hidden'
+                    disabled={isUploadingAvatar}
+                    onChange={(event) => {
+                      void handleAvatarFileChange(event)
+                    }}
+                    type='file'
+                  />
+                </label>
+                <Link to={path.mentorProfile(String(currentMentor.id))}>
+                  <Button className='h-11 rounded-xl px-5' variant='outline'>
+                    <Eye size={16} />
+                    Xem hồ sơ công khai
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
 
@@ -1088,11 +1254,18 @@ export default function MentorProfilePage() {
                                   </Button>
                                   <Button
                                     className='rounded-xl px-5'
-                                    isLoading={isSaving}
+                                    disabled={uploadingAchievementLocalId === achievement.localId}
+                                    isLoading={
+                                      isSaving || uploadingAchievementLocalId === achievement.localId
+                                    }
                                     onClick={() => handleSaveAchievement(achievement)}
                                     type='button'
                                   >
-                                    {achievement.isNew ? 'Lưu thành tựu mới' : 'Cập nhật thành tựu'}
+                                    {uploadingAchievementLocalId === achievement.localId
+                                      ? 'Đang tải minh chứng...'
+                                      : achievement.isNew
+                                        ? 'Lưu thành tựu mới'
+                                        : 'Cập nhật thành tựu'}
                                   </Button>
                                 </div>
                               </div>
@@ -1225,7 +1398,10 @@ export default function MentorProfilePage() {
                                       ? 'border-blue-600 bg-blue-600'
                                       : 'border-slate-300 bg-slate-200'
                                   )}
-                                  disabled
+                                  disabled={upsertSubjectMutation.isPending}
+                                  onClick={() => {
+                                    void handleToggleOfferingActive(offering)
+                                  }}
                                   type='button'
                                 >
                                   <span
@@ -1239,17 +1415,12 @@ export default function MentorProfilePage() {
                                 </button>
                               </div>
                               <button
-                                aria-label='Chỉnh sửa offering'
-                                className='rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800'
-                                disabled
-                                type='button'
-                              >
-                                <PenLine size={18} />
-                              </button>
-                              <button
                                 aria-label='Xóa offering'
                                 className='rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-800'
-                                disabled
+                                disabled={deleteSubjectMutation.isPending}
+                                onClick={() => {
+                                  void handleDeleteOffering(offering.id)
+                                }}
                                 type='button'
                               >
                                 <Trash2 size={18} />
@@ -1263,10 +1434,22 @@ export default function MentorProfilePage() {
                 ) : (
                   <Card className='rounded-2xl border-slate-200 bg-slate-50 shadow-none'>
                     <CardContent className='p-4 text-sm text-slate-600'>
-                      Bạn chưa có offering nào được trả về từ `getCurrentMentorSubjects()`.
+                      Bạn chưa có môn dạy nào. Hãy thêm môn dạy ở khung bên dưới.
                     </CardContent>
                   </Card>
                 )}
+
+                {offeringsErrorMessage ? (
+                  <div className='rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
+                    {offeringsErrorMessage}
+                  </div>
+                ) : null}
+
+                {offeringsMessage ? (
+                  <div className='rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700'>
+                    {offeringsMessage}
+                  </div>
+                ) : null}
 
                 <div className='rounded-[22px] border border-dashed border-slate-300 bg-slate-50/80 p-4 md:p-5'>
                   <div className='space-y-4'>
@@ -1274,7 +1457,7 @@ export default function MentorProfilePage() {
                       <span className='flex h-8 w-8 items-center justify-center rounded-full bg-white text-blue-700 shadow-sm'>
                         <Plus size={16} />
                       </span>
-                      <span>Thêm mục mới nhanh</span>
+                      <span>Thêm môn dạy mới</span>
                     </div>
 
                     <div className='grid gap-3 md:grid-cols-4'>
@@ -1284,11 +1467,7 @@ export default function MentorProfilePage() {
                           ariaLabel='Chọn môn học'
                           className='[&_button]:h-11 [&_button]:rounded-xl [&_button]:text-slate-900!'
                           onValueChange={setQuickAddSubject}
-                          options={[
-                            { label: 'Toán', value: 'toan' },
-                            { label: 'Vật lý', value: 'vat-ly' },
-                            { label: 'Hóa học', value: 'hoa-hoc' }
-                          ]}
+                          options={subjectOptions}
                           placeholder='Chọn môn học'
                           value={quickAddSubject}
                         />
@@ -1299,11 +1478,7 @@ export default function MentorProfilePage() {
                           ariaLabel='Chọn cấp lớp'
                           className='[&_button]:h-11 [&_button]:rounded-xl [&_button]:text-slate-900!'
                           onValueChange={setQuickAddGrade}
-                          options={[
-                            { label: 'Lớp 8', value: 'lop-8' },
-                            { label: 'Lớp 9', value: 'lop-9' },
-                            { label: 'Lớp 10', value: 'lop-10' }
-                          ]}
+                          options={gradeOptions}
                           placeholder='Chọn lớp'
                           value={quickAddGrade}
                         />
@@ -1321,24 +1496,55 @@ export default function MentorProfilePage() {
                         <AppSelect
                           ariaLabel='Chọn cấp độ'
                           className='[&_button]:h-11 [&_button]:rounded-xl [&_button]:text-slate-900!'
-                          onValueChange={setQuickAddLevel}
+                          onValueChange={(value) =>
+                            setQuickAddLevel(value as MentorProficiencyLevelApiResponse)
+                          }
                           options={[
-                            { label: 'Cơ bản', value: 'basic' },
-                            { label: 'Nâng cao', value: 'advanced' },
-                            { label: 'Chuyên sâu', value: 'expert' }
+                            { label: 'Cơ bản', value: 'BASIC' },
+                            { label: 'Trung bình', value: 'INTERMEDIATE' },
+                            { label: 'Nâng cao', value: 'ADVANCED' },
+                            { label: 'Chuyên sâu', value: 'EXPERT' }
                           ]}
-                          placeholder='Cơ bản'
+                          placeholder='Trung bình'
                           value={quickAddLevel}
                         />
                       </div>
                     </div>
 
+                    <div className='space-y-2'>
+                      <Label>Ghi chú giảng dạy</Label>
+                      <Input
+                        className='h-11 rounded-xl bg-white'
+                        onChange={(event) => setQuickAddTeachingNote(event.target.value)}
+                        placeholder='Mô tả ngắn gọn nội dung và phương pháp giảng dạy...'
+                        value={quickAddTeachingNote}
+                      />
+                    </div>
+
                     <div className='flex flex-col gap-3 border-t border-slate-200/80 pt-4 sm:flex-row sm:items-center sm:justify-end'>
-                      <Button className='rounded-xl px-4' disabled type='button' variant='outline'>
-                        Hủy bỏ
+                      <Button
+                        className='rounded-xl px-4'
+                        onClick={() => {
+                          setQuickAddSubject('')
+                          setQuickAddGrade('')
+                          setQuickAddPrice('200000')
+                          setQuickAddTeachingNote('')
+                        }}
+                        type='button'
+                        variant='outline'
+                      >
+                        Làm mới
                       </Button>
-                      <Button className='rounded-xl px-5' disabled={!canQuickAdd} type='button'>
-                        Tạo mới
+                      <Button
+                        className='rounded-xl px-5'
+                        disabled={!canQuickAdd}
+                        isLoading={upsertSubjectMutation.isPending}
+                        onClick={() => {
+                          void handleQuickAddOffering()
+                        }}
+                        type='button'
+                      >
+                        Thêm môn dạy
                       </Button>
                     </div>
                   </div>
@@ -1423,13 +1629,21 @@ export default function MentorProfilePage() {
           <Card className='overflow-hidden rounded-[26px] border-slate-200 shadow-none'>
             <div className='h-20 bg-gradient-to-r from-blue-700 to-blue-500' />
             <CardContent className='space-y-4 p-6 pt-0'>
-              <div className='-mt-8 flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-slate-100 text-lg font-semibold text-slate-700 shadow-sm'>
-                {currentMentor.fullName
-                  .split(' ')
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join('')
-                  .toUpperCase()}
+              <div className='-mt-8 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-slate-100 text-lg font-semibold text-slate-700 shadow-sm'>
+                {currentMentor.avatarUrl ? (
+                  <img
+                    alt={currentMentor.fullName}
+                    className='h-full w-full object-cover'
+                    src={currentMentor.avatarUrl}
+                  />
+                ) : (
+                  (currentMentor.fullName || 'M')
+                    .split(' ')
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join('')
+                    .toUpperCase()
+                )}
               </div>
               <div className='space-y-1'>
                 <p className='text-ink font-semibold'>{currentMentor.fullName}</p>

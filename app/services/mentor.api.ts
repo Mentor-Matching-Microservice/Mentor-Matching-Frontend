@@ -256,16 +256,8 @@ async function normalizeMentorSubjects(
 const defaultMentorApi = {
   createCurrentMentor: async (
     payload: UpdateCurrentMentorRequest
-  ): Promise<ApiResponse<CurrentMentorApiResponse>> => {
-    const response = (
-      await http.put<ApiResponse<CurrentMentorApiResponse>>(MENTOR_ENDPOINTS.me, payload)
-    ).data
-
-    return {
-      ...response,
-      data: await normalizeCurrentMentorResponse(response.data)
-    }
-  },
+  ): Promise<ApiResponse<CurrentMentorApiResponse>> =>
+    defaultMentorApi.updateCurrentMentor(payload),
 
   getCurrentMentor: async (): Promise<ApiResponse<CurrentMentorApiResponse>> => {
     const response = (await http.get<ApiResponse<CurrentMentorApiResponse>>(MENTOR_ENDPOINTS.me))
@@ -417,13 +409,31 @@ const defaultMentorApi = {
   updateCurrentMentor: async (
     payload: UpdateCurrentMentorRequest
   ): Promise<ApiResponse<CurrentMentorApiResponse>> => {
+    const requestBody = {
+      gender: payload.gender ?? null,
+      hometownCityId: payload.hometownCityId ?? null,
+      currentDistrictId: payload.currentDistrictId ?? null,
+      headline: payload.headline ?? null,
+      introduction: payload.introduction ?? null,
+      teachingStyle: payload.teachingStyle ?? null,
+      experienceYears: payload.experienceYears ?? null,
+      currentPosition: payload.currentPosition ?? null,
+      workplace: payload.workplace ?? null,
+      education: payload.education ?? null,
+      major: payload.major ?? null,
+      meetingType: payload.meetingType ?? null
+    }
     const response = (
-      await http.put<ApiResponse<CurrentMentorApiResponse>>(MENTOR_ENDPOINTS.me, payload)
+      await http.put<ApiResponse<CurrentMentorApiResponse>>(MENTOR_ENDPOINTS.me, requestBody)
     ).data
+    const normalized = await normalizeCurrentMentorResponse(response.data)
 
     return {
       ...response,
-      data: await normalizeCurrentMentorResponse(response.data)
+      data: {
+        ...normalized,
+        fullName: normalized.fullName || payload.fullName?.trim() || ''
+      }
     }
   },
 

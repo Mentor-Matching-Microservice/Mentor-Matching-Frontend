@@ -86,6 +86,7 @@ export type CurrentMentorApiResponse = {
 }
 
 export type UpdateCurrentMentorRequest = {
+  fullName?: string
   gender?: Gender | null
   hometownCityId?: number | null
   currentDistrictId?: number | null
