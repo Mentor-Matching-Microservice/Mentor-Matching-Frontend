@@ -58,8 +58,14 @@ export function MentorVerificationDetailModal({
             <>
               <div className='mb-5 flex flex-wrap items-start justify-between gap-3 pr-8'>
                 <div>
-                  <h3 className='text-ink text-xl font-bold tracking-tight'>{verification.accountFullName}</h3>
-                  <p className='text-muted mt-1 text-sm'>{verification.accountEmail}</p>
+                  <h3 className='text-ink text-xl font-bold tracking-tight'>
+                    {verification.accountFullName || verification.fullName}
+                  </h3>
+                  {verification.accountEmail ? (
+                    <p className='text-muted mt-1 text-sm'>{verification.accountEmail}</p>
+                  ) : (
+                    <p className='text-muted mt-1 text-sm'>Mentor ID: #{verification.mentorId}</p>
+                  )}
                 </div>
                 <StatusBadge kind='verification' status={verification.verificationStatus} />
               </div>

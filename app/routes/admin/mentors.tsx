@@ -191,14 +191,20 @@ export default function AdminMentorsPage() {
                 <Card className='rounded-2xl border-amber-200 shadow-none' key={item.id}>
                   <CardContent className='flex flex-col gap-5 p-5 xl:flex-row xl:items-start'>
                     <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-lg font-semibold text-amber-700'>
-                      {getInitials(item.accountFullName)}
+                      {getInitials(item.fullName || item.accountFullName || 'M')}
                     </div>
 
                     <div className='min-w-0 flex-1 space-y-4'>
                       <div className='flex flex-wrap items-start justify-between gap-3'>
                         <div>
-                          <h2 className='text-ink text-lg font-semibold'>{item.accountFullName}</h2>
-                          <p className='text-muted mt-1 text-sm'>{item.accountEmail}</p>
+                          <h2 className='text-ink text-lg font-semibold'>
+                            {item.fullName || item.accountFullName}
+                          </h2>
+                          {item.accountEmail ? (
+                            <p className='text-muted mt-1 text-sm'>{item.accountEmail}</p>
+                          ) : (
+                            <p className='text-muted mt-1 text-sm'>Mentor ID: #{item.mentorId}</p>
+                          )}
                         </div>
                         <div className='flex flex-wrap gap-2'>
                           <StatusBadge kind='verification' status={item.verificationStatus} />
