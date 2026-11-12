@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 
+import { useCurrentMentorOnboardingStatusQuery } from '@/hooks/queries/mentor/useCurrentMentorOnboardingStatusQuery'
 import { useCurrentMentorProfileQuery } from '@/hooks/queries/mentor/useCurrentMentorProfileQuery'
 import { useDeleteCurrentMentorSubjectMutation } from '@/hooks/queries/mentor/useDeleteCurrentMentorSubjectMutation'
 import { useUpsertCurrentMentorSubjectMutation } from '@/hooks/queries/mentor/useUpsertCurrentMentorSubjectMutation'
@@ -23,7 +24,9 @@ export function useBecomeMentorOfferingsStep({
   setFormState
 }: UseBecomeMentorOfferingsStepParams) {
   const [editingOfferingId, setEditingOfferingId] = useState<string | null>(null)
-  const currentProfileQuery = useCurrentMentorProfileQuery()
+  const onboardingStatusQuery = useCurrentMentorOnboardingStatusQuery()
+  const shouldFetchCurrentProfile = Boolean(onboardingStatusQuery.data?.mentorProfileCreated)
+  const currentProfileQuery = useCurrentMentorProfileQuery(shouldFetchCurrentProfile)
   const upsertCurrentMentorSubjectMutation = useUpsertCurrentMentorSubjectMutation()
   const deleteCurrentMentorSubjectMutation = useDeleteCurrentMentorSubjectMutation()
   const editingOffering = offerings.find((offering) => offering.id === editingOfferingId) ?? null
@@ -85,15 +88,21 @@ export function useBecomeMentorOfferingsStep({
     editingOffering,
     isDeleting: deleteCurrentMentorSubjectMutation.isPending,
     isEditing: Boolean(editingOfferingId),
-    isError: currentProfileQuery.isError,
-    isLoading: currentProfileQuery.isLoading,
+    isError:
+      onboardingStatusQuery.isError || (shouldFetchCurrentProfile && currentProfileQuery.isError),
+    isLoading:
+      onboardingStatusQuery.isLoading ||
+      (shouldFetchCurrentProfile && currentProfileQuery.isLoading),
     isSaving: upsertCurrentMentorSubjectMutation.isPending,
     onEditOffering: editOffering,
     onRemoveOffering: removeOffering,
     onResetDraft: resetOfferingDraft,
     /* Thử tải lại hồ sơ mentor để đồng bộ offerings. */
     onRetry: () => {
-      void currentProfileQuery.refetch()
+      void onboardingStatusQuery.refetch()
+      if (shouldFetchCurrentProfile) {
+        void currentProfileQuery.refetch()
+      }
     },
     onSaveOffering: saveOffering
   }

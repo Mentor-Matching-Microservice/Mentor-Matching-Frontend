@@ -5,8 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, useWatch } from 'react-hook-form'
 
 import { useMediaUploadField } from '@/hooks/media/useMediaUploadField'
-import { useCurrentMentorOnboardingStatusQuery } from '@/hooks/queries/mentor/useCurrentMentorOnboardingStatusQuery'
 import { useCurrentMentorVerificationQuery } from '@/hooks/queries/mentor/useCurrentMentorVerificationQuery'
+import { useCurrentMentorVerificationStatusQuery } from '@/hooks/queries/mentor/useCurrentMentorVerificationStatusQuery'
 import { useUpsertCurrentMentorVerificationMutation } from '@/hooks/queries/mentor/useUpsertCurrentMentorVerificationMutation'
 import type { ErrorResponse } from '@/types/api/common'
 import type { CurrentMentorVerificationApiResponse } from '@/types/api/mentor'
@@ -43,8 +43,11 @@ export function useBecomeMentorVerificationForm({
     null
   )
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
-  const onboardingStatusQuery = useCurrentMentorOnboardingStatusQuery()
-  const shouldFetchCurrentVerification = Boolean(onboardingStatusQuery.data?.mentorProfileCreated)
+  const verificationStatusQuery = useCurrentMentorVerificationStatusQuery()
+  const shouldFetchCurrentVerification = Boolean(
+    verificationStatusQuery.data?.verificationStatus &&
+      verificationStatusQuery.data.verificationStatus !== 'UNVERIFIED'
+  )
   const currentMentorVerificationQuery = useCurrentMentorVerificationQuery(
     shouldFetchCurrentVerification
   )
@@ -87,17 +90,21 @@ export function useBecomeMentorVerificationForm({
     name: 'verificationFullName'
   })
   const watchedIdCardNumber = useWatch({ control: form.control, name: 'idCardNumber' })
-  const verificationStatus = currentMentorVerificationQuery.data?.verificationStatus ?? 'UNVERIFIED'
-  const rejectionReason = currentMentorVerificationQuery.data?.rejectionReason ?? null
-  const requiresProfile = onboardingStatusQuery.data
-    ? !onboardingStatusQuery.data.mentorProfileCreated
-    : false
+  const verificationStatus =
+    currentMentorVerificationQuery.data?.verificationStatus ??
+    verificationStatusQuery.data?.verificationStatus ??
+    'UNVERIFIED'
+  const rejectionReason =
+    currentMentorVerificationQuery.data?.rejectionReason ??
+    verificationStatusQuery.data?.rejectionReason ??
+    null
+  const requiresProfile = false
   const isLocked = verificationStatus === 'PENDING' || verificationStatus === 'VERIFIED'
   const isLoading =
-    onboardingStatusQuery.isLoading ||
+    verificationStatusQuery.isLoading ||
     (shouldFetchCurrentVerification && currentMentorVerificationQuery.isLoading)
   const isError =
-    onboardingStatusQuery.isError ||
+    verificationStatusQuery.isError ||
     (shouldFetchCurrentVerification && currentMentorVerificationQuery.isError)
   const isSubmitting =
     upsertCurrentMentorVerificationMutation.isPending ||
@@ -111,8 +118,8 @@ export function useBecomeMentorVerificationForm({
     Boolean(
       watchedVerificationFullName.trim() &&
       watchedIdCardNumber.trim() &&
-      idFrontField.value.mediaId &&
-      idBackField.value.mediaId
+      (idFrontField.value.previewUrl || idFrontField.value.mediaId) &&
+      (idBackField.value.previewUrl || idBackField.value.mediaId)
     )
 
   useEffect(() => {
@@ -171,7 +178,7 @@ export function useBecomeMentorVerificationForm({
     getFieldByKey(key, idFrontField, idBackField, selfieWithIdField).clear()
   }
 
-  /* Submit hồ sơ xác minh với mediaId của từng ảnh đã upload. */
+  /* Submit hồ sơ xác minh với URL và mediaId của từng ảnh đã upload. */
   const handleSubmit = form.handleSubmit(async (values) => {
     if (requiresProfile || isLocked) return
 
@@ -181,8 +188,11 @@ export function useBecomeMentorVerificationForm({
       const response = await upsertCurrentMentorVerificationMutation.mutateAsync({
         fullName: values.verificationFullName.trim(),
         idCardNumber: values.idCardNumber.trim() || null,
-        idCardFrontMediaId: idFrontField.value.mediaId as number,
-        idCardBackMediaId: idBackField.value.mediaId as number,
+        idCardFrontUrl: idFrontField.value.previewUrl,
+        idCardBackUrl: idBackField.value.previewUrl,
+        selfieWithIdUrl: selfieWithIdField.value.previewUrl || null,
+        idCardFrontMediaId: idFrontField.value.mediaId,
+        idCardBackMediaId: idBackField.value.mediaId,
         selfieWithIdMediaId: selfieWithIdField.value.mediaId
       })
       const nextValues = mapCurrentMentorVerificationToFormValues(response.verification)
@@ -206,7 +216,7 @@ export function useBecomeMentorVerificationForm({
     isSubmitting,
     onRetry: () => {
       setSubmitErrorMessage(null)
-      void onboardingStatusQuery.refetch()
+      void verificationStatusQuery.refetch()
       if (shouldFetchCurrentVerification) {
         void currentMentorVerificationQuery.refetch()
       }
@@ -235,17 +245,17 @@ function mapCurrentMentorVerificationToFormValues(
     documents: {
       idFront: {
         fileName: '',
-        mediaId: verification.idCardFrontMediaId,
+        mediaId: verification.idCardFrontMediaId ?? null,
         previewUrl: verification.idCardFrontUrl ?? ''
       },
       idBack: {
         fileName: '',
-        mediaId: verification.idCardBackMediaId,
+        mediaId: verification.idCardBackMediaId ?? null,
         previewUrl: verification.idCardBackUrl ?? ''
       },
       selfieWithId: {
         fileName: '',
-        mediaId: verification.selfieWithIdMediaId,
+        mediaId: verification.selfieWithIdMediaId ?? null,
         previewUrl: verification.selfieWithIdUrl ?? ''
       }
     }

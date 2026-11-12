@@ -80,10 +80,10 @@ export function BecomeMentorVerificationSection({
 
   return (
     <BecomeMentorSectionCard
-      description='Chọn ảnh giấy tờ trực tiếp từ máy để hoàn thiện bước xác minh trước khi gửi duyệt.'
-      eyebrow='Bước 5'
+      description='Xác minh danh tính (KYC) là bước đầu tiên để khởi tạo hồ sơ mentor và được cấp quyền cập nhật thông tin giảng dạy.'
+      eyebrow='Bước 1'
       id='verification'
-      title='Xác minh danh tính'
+      title='Xác minh danh tính (KYC)'
     >
       {verificationForm.requiresProfile ? (
         <div className='rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-800'>
@@ -146,7 +146,7 @@ export function BecomeMentorVerificationSection({
         <div className='grid gap-4 md:grid-cols-3'>
           {verificationDocumentMeta.map((document) => {
             const documentValue = verificationForm.selectedDocuments[document.key]
-            const done = Boolean(documentValue.mediaId)
+            const done = Boolean(documentValue.previewUrl || documentValue.mediaId)
             const isUploading = verificationForm.uploadingDocumentKey === document.key
 
             return (

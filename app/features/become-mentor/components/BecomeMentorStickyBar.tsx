@@ -14,6 +14,7 @@ type BecomeMentorStickyBarProps = {
   isSubmitting?: boolean
   onBack: () => void
   onFinalSubmit?: () => void
+  submitLabel?: string
   totalCount: number
 }
 
@@ -28,8 +29,11 @@ export function BecomeMentorStickyBar({
   isSubmitting = false,
   onBack,
   onFinalSubmit,
+  submitLabel,
   totalCount
 }: BecomeMentorStickyBarProps) {
+  const defaultSubmitLabel = isLastStep ? 'Hoàn tất thiết lập hồ sơ' : 'Tiếp tục'
+
   return (
     <div className='sticky bottom-4 z-30 mt-8'>
       <div className='mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-[28px] border border-slate-200 bg-white/96 px-4 py-4 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.45)] backdrop-blur md:flex-row md:items-center md:justify-between md:px-6'>
@@ -57,13 +61,13 @@ export function BecomeMentorStickyBar({
           ) : null}
           <Button
             className='rounded-2xl'
-            form={isLastStep && isReadyForFinalSubmit ? undefined : currentStepFormId}
+            form={(isLastStep && isReadyForFinalSubmit) || onFinalSubmit ? undefined : currentStepFormId}
             isLoading={isSubmitting}
-            onClick={isLastStep && isReadyForFinalSubmit ? onFinalSubmit : undefined}
+            onClick={(isLastStep && isReadyForFinalSubmit) || onFinalSubmit ? onFinalSubmit : undefined}
             size='lg'
-            type={isLastStep && isReadyForFinalSubmit ? 'button' : 'submit'}
+            type={(isLastStep && isReadyForFinalSubmit) || onFinalSubmit ? 'button' : 'submit'}
           >
-            {isLastStep ? 'Gửi duyệt hồ sơ' : 'Tiếp tục'}
+            {submitLabel ?? defaultSubmitLabel}
             <ArrowRight size={16} />
           </Button>
         </div>

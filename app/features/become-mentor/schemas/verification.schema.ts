@@ -18,7 +18,7 @@ export const becomeMentorVerificationSchema = z.object({
       selfieWithId: verificationDocumentSchema
     })
     .superRefine((documents, context) => {
-      if (!documents.idFront.mediaId) {
+      if (!documents.idFront.previewUrl.trim() && !documents.idFront.mediaId) {
         context.addIssue({
           code: 'custom',
           message: 'Vui lòng tải ảnh mặt trước giấy tờ',
@@ -26,7 +26,7 @@ export const becomeMentorVerificationSchema = z.object({
         })
       }
 
-      if (!documents.idBack.mediaId) {
+      if (!documents.idBack.previewUrl.trim() && !documents.idBack.mediaId) {
         context.addIssue({
           code: 'custom',
           message: 'Vui lòng tải ảnh mặt sau giấy tờ',

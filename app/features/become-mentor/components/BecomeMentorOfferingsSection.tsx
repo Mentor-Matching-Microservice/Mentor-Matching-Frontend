@@ -121,7 +121,7 @@ export function BecomeMentorOfferingsSection({
   return (
     <BecomeMentorSectionCard
       description='Mỗi môn học nên có cấp lớp, mô tả ngắn và học phí riêng để học viên dễ so sánh và chọn đúng nhu cầu.'
-      eyebrow='Bước 2'
+      eyebrow='Bước 3'
       id='offerings'
       title='Môn dạy và học phí'
     >

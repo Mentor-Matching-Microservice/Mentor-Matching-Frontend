@@ -73,7 +73,7 @@ export function BecomeMentorAvailabilitySection({
   return (
     <BecomeMentorSectionCard
       description='Dùng lại đúng cách chọn khung giờ của khu mentor để hồ sơ ứng tuyển và workspace sau này giữ cùng một logic.'
-      eyebrow='Bước 3'
+      eyebrow='Bước 4'
       id='availability'
       title='Lịch rảnh ban đầu'
     >

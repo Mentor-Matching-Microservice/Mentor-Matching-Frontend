@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useUploadMediaMutation } from '@/hooks/queries/media/useUploadMediaMutation'
 import { useCurrentMentorVerificationQuery } from '@/hooks/queries/mentor/useCurrentMentorVerificationQuery'
 import { useUpsertCurrentMentorVerificationMutation } from '@/hooks/queries/mentor/useUpsertCurrentMentorVerificationMutation'
 import type { ErrorResponse } from '@/types/api/common'
@@ -131,7 +132,7 @@ function VerificationStatusBanner({
               {status === 'VERIFIED'
                 ? 'Thông tin danh tính của bạn đã được xác minh thành công.'
                 : status === 'PENDING'
-                  ? 'Hồ sơ đang được đội ngũ kiểm tra. Bạn vẫn có thể cập nhật lại nếu cần bổ sung.'
+                  ? 'Hồ sơ đang được đội ngũ kiểm tra. Bạn chưa thể chỉnh sửa ở trạng thái này.'
                   : 'Bổ sung thông tin thật chính xác để quá trình duyệt diễn ra thuận lợi hơn.'}
             </p>
           )}
@@ -146,20 +147,28 @@ function VerificationUploadCard({
   hint,
   value,
   inputId,
+  disabled = false,
+  isUploading = false,
   onFileChange
 }: {
   title: string
   hint: string[]
   value: string
   inputId: string
+  disabled?: boolean
+  isUploading?: boolean
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void
 }) {
   return (
     <div className='space-y-3'>
       <Label htmlFor={inputId}>{title}</Label>
       <label
-        className='flex min-h-[184px] cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-slate-50/60 px-4 py-6 text-center transition hover:border-blue-300 hover:bg-blue-50/40'
-        htmlFor={inputId}
+        className={`flex min-h-[184px] flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-300 bg-slate-50/60 px-4 py-6 text-center transition ${
+          disabled
+            ? 'cursor-not-allowed opacity-70'
+            : 'cursor-pointer hover:border-blue-300 hover:bg-blue-50/40'
+        }`}
+        htmlFor={disabled ? undefined : inputId}
       >
         {value ? (
           <img alt={title} className='h-24 w-24 rounded-2xl object-cover shadow-sm' src={value} />
@@ -167,15 +176,20 @@ function VerificationUploadCard({
           <Camera className='text-slate-400' size={40} />
         )}
         <p className='mt-4 text-lg font-medium text-slate-700'>
-          {value ? 'Đã chọn ảnh' : 'Tải ảnh lên'}
+          {isUploading ? 'Đang tải ảnh lên...' : value ? 'Đã chọn ảnh' : 'Tải ảnh lên'}
         </p>
         <p className='mt-1 text-sm text-slate-500'>
-          {value ? 'Bấm để thay ảnh khác' : 'Ảnh rõ nét, không lóa sáng'}
+          {disabled
+            ? 'Hồ sơ đang khóa chỉnh sửa'
+            : value
+              ? 'Bấm để thay ảnh khác'
+              : 'Ảnh rõ nét, không lóa sáng'}
         </p>
       </label>
       <input
         accept='image/png,image/jpeg,image/webp'
         className='hidden'
+        disabled={disabled}
         id={inputId}
         onChange={onFileChange}
         type='file'
@@ -203,22 +217,31 @@ export function meta() {
 export default function MentorVerificationPage() {
   const { data: verification, isLoading, isError, refetch } = useCurrentMentorVerificationQuery()
   const upsertVerificationMutation = useUpsertCurrentMentorVerificationMutation()
+  const uploadMediaMutation = useUploadMediaMutation()
 
   const [draftValues, setDraftValues] = useState<VerificationDraft | null>(null)
+  const [uploadingField, setUploadingField] = useState<string | null>(null)
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null)
   const [submitErrorMessage, setSubmitErrorMessage] = useState<string | null>(null)
 
   const sourceValues = mapVerificationToDraft(verification)
   const formValues = draftValues ?? sourceValues
   const hasUnsavedChanges = !areVerificationDraftsEqual(formValues, sourceValues)
-  const isSubmitting = upsertVerificationMutation.isPending
+  const isLocked =
+    verification?.verificationStatus === 'PENDING' ||
+    verification?.verificationStatus === 'VERIFIED'
+  const isSubmitting = upsertVerificationMutation.isPending || uploadMediaMutation.isPending
 
   const canSubmit = useMemo(
     () =>
+      !isLocked &&
+      !uploadingField &&
       Boolean(
-        formValues.fullName.trim() && formValues.idCardFrontMediaId && formValues.idCardBackMediaId
+        formValues.fullName.trim() &&
+          formValues.idCardFrontUrl.trim() &&
+          formValues.idCardBackUrl.trim()
       ),
-    [formValues]
+    [formValues, isLocked, uploadingField]
   )
 
   const handleRetry = () => {
@@ -230,6 +253,7 @@ export default function MentorVerificationPage() {
 
   const handleFieldChange =
     (field: keyof VerificationDraft) => (event: ChangeEvent<HTMLInputElement>) => {
+      if (isLocked) return
       setSaveSuccessMessage(null)
       setSubmitErrorMessage(null)
       setDraftValues((currentValues) => ({
@@ -243,29 +267,54 @@ export default function MentorVerificationPage() {
       field: 'idCardFrontUrl' | 'idCardBackUrl' | 'selfieWithIdUrl',
       mediaIdField: 'idCardFrontMediaId' | 'idCardBackMediaId' | 'selfieWithIdMediaId'
     ) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      if (isLocked) return
       const file = event.target.files?.[0]
+      event.target.value = ''
       if (!file) return
 
-      const reader = new FileReader()
-      reader.onload = () => {
-        const result = typeof reader.result === 'string' ? reader.result : ''
-        setSaveSuccessMessage(null)
-        setSubmitErrorMessage(null)
+      setSaveSuccessMessage(null)
+      setSubmitErrorMessage(null)
+      setUploadingField(field)
+
+      const localPreviewUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+        reader.onerror = () => resolve('')
+        reader.readAsDataURL(file)
+      })
+
+      setDraftValues((currentValues) => ({
+        ...(currentValues ?? sourceValues),
+        [field]: localPreviewUrl,
+        [mediaIdField]: null
+      }))
+
+      try {
+        const uploadResponse = await uploadMediaMutation.mutateAsync({
+          file,
+          purpose: 'VERIFICATION',
+          resourceType: 'IMAGE'
+        })
+
         setDraftValues((currentValues) => ({
           ...(currentValues ?? sourceValues),
-          [field]: result,
-          [mediaIdField]: null
+          [field]: uploadResponse.data.deliveryUrl ?? localPreviewUrl,
+          [mediaIdField]: uploadResponse.data.id
         }))
+      } catch (error) {
+        setSubmitErrorMessage(getVerificationErrorMessage(error))
+      } finally {
+        setUploadingField(null)
       }
-      reader.readAsDataURL(file)
-      event.target.value = ''
     }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!formValues.idCardFrontMediaId || !formValues.idCardBackMediaId) {
+    if (isLocked) return
+
+    if (!formValues.idCardFrontUrl.trim() || !formValues.idCardBackUrl.trim()) {
       setSubmitErrorMessage('Vui lòng tải ảnh giấy tờ lên trước khi gửi xác thực.')
       return
     }
@@ -273,6 +322,9 @@ export default function MentorVerificationPage() {
     const payload: UpsertCurrentMentorVerificationRequest = {
       fullName: formValues.fullName.trim(),
       idCardNumber: formValues.idCardNumber.trim() || null,
+      idCardFrontUrl: formValues.idCardFrontUrl.trim(),
+      idCardBackUrl: formValues.idCardBackUrl.trim(),
+      selfieWithIdUrl: formValues.selfieWithIdUrl.trim() || null,
       idCardFrontMediaId: formValues.idCardFrontMediaId,
       idCardBackMediaId: formValues.idCardBackMediaId,
       selfieWithIdMediaId: formValues.selfieWithIdMediaId
@@ -343,6 +395,7 @@ export default function MentorVerificationPage() {
                   <Label htmlFor='verification-full-name'>Họ và tên thật</Label>
                   <Input
                     className='h-12 rounded-xl'
+                    disabled={isLocked || isSubmitting}
                     id='verification-full-name'
                     onChange={handleFieldChange('fullName')}
                     placeholder='Họ và tên thật'
@@ -354,6 +407,7 @@ export default function MentorVerificationPage() {
                   <Label htmlFor='verification-id-card'>Số CMND/CCCD/Hộ chiếu</Label>
                   <Input
                     className='h-12 rounded-xl'
+                    disabled={isLocked || isSubmitting}
                     id='verification-id-card'
                     onChange={handleFieldChange('idCardNumber')}
                     placeholder='Số CMND/CCCD/Hộ chiếu'
@@ -366,22 +420,28 @@ export default function MentorVerificationPage() {
             <div className='rounded-[24px] border border-slate-200 p-4 md:p-5'>
               <div className='grid gap-5 xl:grid-cols-3'>
                 <VerificationUploadCard
+                  disabled={isLocked || isSubmitting}
                   hint={['Ảnh rõ nét, không lóa sáng', 'Ảnh cước mặt trước CCCD/hộ chiếu']}
                   inputId='verification-front'
+                  isUploading={uploadingField === 'idCardFrontUrl'}
                   onFileChange={handleFileChange('idCardFrontUrl', 'idCardFrontMediaId')}
                   title='Mặt trước CCCD'
                   value={formValues.idCardFrontUrl}
                 />
                 <VerificationUploadCard
+                  disabled={isLocked || isSubmitting}
                   hint={['Ảnh rõ nét, không lóa sáng', 'Ảnh sau: Mặt sau/CCCD/hộ chiếu']}
                   inputId='verification-back'
+                  isUploading={uploadingField === 'idCardBackUrl'}
                   onFileChange={handleFileChange('idCardBackUrl', 'idCardBackMediaId')}
                   title='Mặt sau CCCD'
                   value={formValues.idCardBackUrl}
                 />
                 <VerificationUploadCard
+                  disabled={isLocked || isSubmitting}
                   hint={['Ảnh rõ nét, không lóa sáng', 'Ảnh selfie cùng CCCD']}
                   inputId='verification-selfie'
+                  isUploading={uploadingField === 'selfieWithIdUrl'}
                   onFileChange={handleFileChange('selfieWithIdUrl', 'selfieWithIdMediaId')}
                   title='Ảnh Selfie cùng CCCD'
                   value={formValues.selfieWithIdUrl}

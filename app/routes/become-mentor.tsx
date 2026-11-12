@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Clock, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Clock, RefreshCw, ShieldAlert } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { StatusBadge } from '@/components/StatusBadge/StatusBadge'
-import { buttonVariants } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { initialBecomeMentorFormState } from '@/features/become-mentor/become-mentor.constants'
 import {
   BecomeMentorAvailabilitySection,
@@ -28,6 +28,8 @@ import { useCurrentMentorOnboardingStatusQuery } from '@/hooks/queries/mentor/us
 import { useCurrentMentorProfileQuery } from '@/hooks/queries/mentor/useCurrentMentorProfileQuery'
 import { useCurrentMentorScheduleQuery } from '@/hooks/queries/mentor/useCurrentMentorScheduleQuery'
 import { useSubmitCurrentMentorApplicationMutation } from '@/hooks/queries/mentor/useSubmitCurrentMentorApplicationMutation'
+import { authApi } from '@/services/auth.api'
+import { useAuthStore } from '@/stores/auth-store'
 import type {
   BecomeMentorFormState,
   BecomeMentorReadinessItem,
@@ -54,6 +56,21 @@ function getReadinessItems(
   onboardingStatus?: CurrentMentorOnboardingStatusApiResponse
 ): BecomeMentorReadinessItem[] {
   return [
+    {
+      id: 'verification',
+      label: 'Xác minh danh tính (KYC)',
+      helper: 'Bước bắt buộc để kích hoạt quyền Mentor trước khi thiết lập hồ sơ giảng dạy.',
+      done:
+        onboardingStatus?.verificationStatus === 'VERIFIED' ||
+        onboardingStatus?.verificationSubmitted ||
+        Boolean(
+          formState.verificationFullName &&
+          formState.idCardNumber &&
+          (formState.documents.idFront.previewUrl || formState.documents.idFront.mediaId) &&
+          (formState.documents.idBack.previewUrl || formState.documents.idBack.mediaId) &&
+          (formState.documents.selfieWithId.previewUrl || formState.documents.selfieWithId.mediaId)
+        )
+    },
     {
       id: 'profile',
       label: 'Hồ sơ cá nhân và chuyên môn',
@@ -88,19 +105,6 @@ function getReadinessItems(
       label: 'Lịch rảnh',
       helper: '',
       done: formState.availabilities.length > 0
-    },
-    {
-      id: 'verification',
-      label: 'Xác minh',
-      helper: '',
-      done:
-        onboardingStatus?.verificationSubmitted ??
-        Boolean(
-          formState.verificationFullName &&
-          formState.idCardNumber &&
-          formState.documents.idFront.mediaId &&
-          formState.documents.idBack.mediaId
-        )
     }
   ]
 }
@@ -125,9 +129,13 @@ function getSteps(
 
 export default function BecomeMentorPage() {
   const [formStateOverride, setFormStateOverride] = useState<BecomeMentorFormState | null>(null)
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
   const [submitApplicationError, setSubmitApplicationError] = useState<string | null>(null)
+  const [isEditingApprovedProfile, setIsEditingApprovedProfile] = useState(false)
+  const [isRefreshingRole, setIsRefreshingRole] = useState(false)
   const onboardingStatusQuery = useCurrentMentorOnboardingStatusQuery()
+  const verificationStatus = onboardingStatusQuery.data?.verificationStatus ?? 'UNVERIFIED'
+  const isKycVerified = verificationStatus === 'VERIFIED'
   const shouldFetchBootstrapData = Boolean(onboardingStatusQuery.data?.mentorProfileCreated)
   const bootstrapProfileQuery = useCurrentMentorProfileQuery(shouldFetchBootstrapData)
   const bootstrapScheduleQuery = useCurrentMentorScheduleQuery(shouldFetchBootstrapData, {
@@ -161,19 +169,27 @@ export default function BecomeMentorPage() {
   )
 
   const readinessItems = getReadinessItems(formState, onboardingStatusQuery.data)
+  const defaultStepIndex = isKycVerified && shouldFetchBootstrapData ? 1 : 0
+  const currentStepIndex = isKycVerified ? (selectedStepIndex ?? defaultStepIndex) : 0
   const steps = getSteps(readinessItems, currentStepIndex)
   const completedCount = readinessItems.filter((item) => item.done).length
   const currentStep = steps[currentStepIndex]
-  const approvalStatus =
-    submitApplicationMutation.data?.onboardingStatus.approvalStatus ??
-    onboardingStatusQuery.data?.approvalStatus ??
-    'DRAFT'
-  const approvalNote = bootstrapProfileQuery.data?.currentMentor.approvalNote ?? null
+  const approvalStatus: MentorApprovalStatusApiResponse =
+    verificationStatus === 'PENDING'
+      ? 'PENDING'
+      : verificationStatus === 'REJECTED'
+        ? 'REJECTED'
+        : submitApplicationMutation.data?.onboardingStatus.approvalStatus ??
+          onboardingStatusQuery.data?.approvalStatus ??
+          'DRAFT'
+  const approvalNote =
+    bootstrapProfileQuery.data?.currentMentor.verificationRejectionReason ??
+    bootstrapProfileQuery.data?.currentMentor.approvalNote ??
+    null
   const shouldShowReviewSummary =
-    approvalStatus === 'PENDING' || approvalStatus === 'APPROVED' || approvalStatus === 'SUSPENDED'
-  const canSubmitApplicationDirectly =
-    Boolean(onboardingStatusQuery.data?.verificationSubmitted) &&
-    onboardingStatusQuery.data?.verificationStatus !== 'REJECTED'
+    verificationStatus === 'PENDING' ||
+    approvalStatus === 'SUSPENDED' ||
+    (approvalStatus === 'APPROVED' && !isEditingApprovedProfile)
   const profileState: BecomeMentorProfileStepState = {
     currentCityId: formState.currentCityId,
     currentDistrictId: formState.currentDistrictId,
@@ -235,12 +251,24 @@ export default function BecomeMentorPage() {
 
   const availabilityStep = useBecomeMentorAvailabilityStep({
     availabilities: formState.availabilities,
-    onSubmitStep: () => goToStep(currentStepIndex + 1),
+    onSubmitStep: () => {
+      void submitApplication()
+    },
     setFormState
   })
 
   const goToStep = (index: number) => {
-    setCurrentStepIndex(Math.max(0, Math.min(index, steps.length - 1)))
+    const clampedIndex = Math.max(0, Math.min(index, steps.length - 1))
+
+    if (!isKycVerified && clampedIndex > 0) {
+      setSubmitApplicationError(
+        'Vui lòng hoàn tất và chờ phê duyệt bước Xác minh danh tính (KYC) trước khi thiết lập hồ sơ chuyên môn, môn dạy và lịch rảnh.'
+      )
+      return
+    }
+
+    setSubmitApplicationError(null)
+    setSelectedStepIndex(clampedIndex)
   }
 
   const submitApplication = async () => {
@@ -248,6 +276,8 @@ export default function BecomeMentorPage() {
 
     try {
       await submitApplicationMutation.mutateAsync()
+      await onboardingStatusQuery.refetch()
+      setIsEditingApprovedProfile(false)
       setFormStateOverride(null)
     } catch (error) {
       setSubmitApplicationError(getSubmitApplicationErrorMessage(error))
@@ -258,8 +288,25 @@ export default function BecomeMentorPage() {
     values: BecomeMentorVerificationFormValues,
     verification: CurrentMentorVerificationApiResponse
   ) => {
+    setSubmitApplicationError(null)
     setFormState((current) => mapVerificationValuesToFormState(current, values, verification))
-    await submitApplication()
+    await onboardingStatusQuery.refetch()
+  }
+
+  const handleRefreshMentorAccess = async () => {
+    setIsRefreshingRole(true)
+    setSubmitApplicationError(null)
+    try {
+      const response = await authApi.refreshToken()
+      if (response.data?.accessToken) {
+        useAuthStore.getState().setAccessToken(response.data.accessToken)
+      }
+      await onboardingStatusQuery.refetch()
+    } catch (error) {
+      setSubmitApplicationError(getSubmitApplicationErrorMessage(error))
+    } finally {
+      setIsRefreshingRole(false)
+    }
   }
 
   const renderCurrentStep = () => {
@@ -338,12 +385,69 @@ export default function BecomeMentorPage() {
     return <BecomeMentorPageSkeleton />
   }
 
+  if (isKycVerified && !shouldFetchBootstrapData) {
+    return (
+      <div className='relative flex min-h-[calc(100vh-8rem)] items-center py-10'>
+        <div className='absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,#eef6ff_0%,#f8fafc_42%,#ffffff_100%)]' />
+        <div className='page-container'>
+          <section className='mx-auto flex max-w-xl flex-col items-center rounded-[32px] border border-emerald-200 bg-white px-6 py-10 text-center shadow-[0_24px_80px_-48px_rgba(15,23,42,0.45)] md:px-10 md:py-12'>
+            <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/60'>
+              <CheckCircle2 size={42} strokeWidth={1.8} />
+            </div>
+            <StatusBadge className='mb-4' kind='verification' status='VERIFIED' />
+            <h1 className='text-2xl font-semibold text-slate-950 md:text-3xl'>
+              Xác minh danh tính (KYC) đã được phê duyệt!
+            </h1>
+            <p className='mt-3 max-w-md text-sm leading-6 font-medium text-slate-600 md:text-base'>
+              Tài khoản của bạn đã được cấp quyền Mentor. Hãy làm mới phiên làm việc để bắt đầu cập
+              nhật thông tin hồ sơ chuyên môn, môn dạy và lịch rảnh.
+            </p>
+            {submitApplicationError ? (
+              <p className='mt-4 text-sm font-medium text-red-600'>{submitApplicationError}</p>
+            ) : null}
+            <div className='mt-8 flex flex-col gap-3 sm:flex-row'>
+              <Button
+                className='h-10 rounded-2xl px-5'
+                isLoading={isRefreshingRole}
+                onClick={() => {
+                  void handleRefreshMentorAccess()
+                }}
+                size='lg'
+                type='button'
+              >
+                <RefreshCw size={16} />
+                Kích hoạt phiên Mentor & Tiếp tục
+              </Button>
+              <Link
+                className={buttonVariants({
+                  className: 'h-10 rounded-2xl px-5',
+                  size: 'lg',
+                  variant: 'outline'
+                })}
+                to='/login'
+              >
+                Đăng nhập lại
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+    )
+  }
+
   if (shouldShowReviewSummary) {
+    const reviewSummaryStatus: Exclude<MentorApprovalStatusApiResponse, 'DRAFT' | 'REJECTED'> =
+      approvalStatus === 'SUSPENDED' || approvalStatus === 'APPROVED' ? approvalStatus : 'PENDING'
+
     return (
       <BecomeMentorReviewSummary
         approvalNote={approvalNote}
-        approvalStatus={approvalStatus}
+        approvalStatus={reviewSummaryStatus}
         completedCount={completedCount}
+        onEditProfile={() => {
+          setIsEditingApprovedProfile(true)
+          setSelectedStepIndex(1)
+        }}
         totalCount={readinessItems.length}
       />
     )
@@ -398,15 +502,26 @@ export default function BecomeMentorPage() {
           currentStepLabel={currentStep.label}
           isFirstStep={currentStepIndex === 0}
           isLastStep={currentStepIndex === steps.length - 1}
-          isReadyForFinalSubmit={canSubmitApplicationDirectly}
+          isReadyForFinalSubmit={false}
           isSubmitting={
             (currentStep.id === 'profile' && profileStep.isSubmitting) ||
             submitApplicationMutation.isPending
           }
           onBack={() => goToStep(currentStepIndex - 1)}
-          onFinalSubmit={() => {
-            void submitApplication()
-          }}
+          onFinalSubmit={
+            currentStep.id === 'verification' && isKycVerified
+              ? () => goToStep(1)
+              : undefined
+          }
+          submitLabel={
+            currentStep.id === 'verification'
+              ? isKycVerified
+                ? 'Tiếp tục sang Hồ sơ chuyên môn'
+                : 'Gửi xác minh danh tính (KYC)'
+              : currentStepIndex === steps.length - 1
+                ? 'Hoàn tất thiết lập hồ sơ'
+                : 'Tiếp tục'
+          }
           totalCount={readinessItems.length}
         />
       </div>
@@ -418,11 +533,13 @@ function BecomeMentorReviewSummary({
   approvalNote,
   approvalStatus,
   completedCount,
+  onEditProfile,
   totalCount
 }: {
   approvalNote: string | null
   approvalStatus: Exclude<MentorApprovalStatusApiResponse, 'DRAFT' | 'REJECTED'>
   completedCount: number
+  onEditProfile?: () => void
   totalCount: number
 }) {
   const config = getReviewSummaryConfig(approvalStatus)
@@ -437,16 +554,17 @@ function BecomeMentorReviewSummary({
             <div className='mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-8 ring-amber-50/60'>
               <Clock size={42} strokeWidth={1.8} />
             </div>
-            <StatusBadge className='mb-4' kind='approval' status='PENDING' />
+            <StatusBadge className='mb-4' kind='verification' status='PENDING' />
             <h1 className='text-2xl font-semibold text-slate-950 md:text-3xl'>
-              Hồ sơ đang chờ duyệt
+              Xác minh danh tính (KYC) đang chờ duyệt
             </h1>
             <p
               className='mt-3 max-w-md text-sm leading-6 font-medium opacity-100 md:text-base'
               style={{ color: '#334155' }}
             >
-              Đội ngũ của chúng tôi đang rà soát hồ sơ của bạn. Quá trình này thường mất 24h - 48h
-              làm việc và bạn sẽ được thông báo ngay khi có kết quả.
+              Đội ngũ quản trị đang rà soát thông tin KYC của bạn (thường mất 24h - 48h làm việc).
+              Ngay khi KYC được phê duyệt, bạn sẽ được cấp quyền Mentor để tiếp tục thiết lập hồ sơ
+              giảng dạy, môn học và lịch rảnh.
             </p>
             <div className='mt-8 flex flex-col gap-3 sm:flex-row'>
               <Link
@@ -454,16 +572,6 @@ function BecomeMentorReviewSummary({
                 to='/'
               >
                 Về trang chủ
-              </Link>
-              <Link
-                className={buttonVariants({
-                  className: 'h-10 rounded-2xl px-5',
-                  size: 'lg',
-                  variant: 'outline'
-                })}
-                to='/mentor'
-              >
-                Mở khu mentor
               </Link>
             </div>
           </section>
@@ -504,6 +612,26 @@ function BecomeMentorReviewSummary({
               Ghi chú: {approvalNote.trim()}
             </div>
           ) : null}
+
+          <div className='mt-6 flex flex-wrap gap-3'>
+            <Link
+              className={buttonVariants({ className: 'rounded-2xl', size: 'lg' })}
+              to='/mentor'
+            >
+              Mở khu mentor
+            </Link>
+            {onEditProfile ? (
+              <Button
+                className='rounded-2xl'
+                onClick={onEditProfile}
+                size='lg'
+                type='button'
+                variant='outline'
+              >
+                Cập nhật thêm hồ sơ
+              </Button>
+            ) : null}
+          </div>
         </section>
       </div>
     </div>
@@ -611,17 +739,17 @@ function mapCurrentMentorBootstrapToFormState({
       ? {
           idBack: {
             fileName: '',
-            mediaId: verification.idCardBackMediaId,
+            mediaId: verification.idCardBackMediaId ?? null,
             previewUrl: verification.idCardBackUrl ?? ''
           },
           idFront: {
             fileName: '',
-            mediaId: verification.idCardFrontMediaId,
+            mediaId: verification.idCardFrontMediaId ?? null,
             previewUrl: verification.idCardFrontUrl ?? ''
           },
           selfieWithId: {
             fileName: '',
-            mediaId: verification.selfieWithIdMediaId,
+            mediaId: verification.selfieWithIdMediaId ?? null,
             previewUrl: verification.selfieWithIdUrl ?? ''
           }
         }
@@ -641,17 +769,17 @@ function mapVerificationValuesToFormState(
     documents: {
       idBack: {
         fileName: values.documents.idBack.fileName,
-        mediaId: verification.idCardBackMediaId,
+        mediaId: verification.idCardBackMediaId ?? null,
         previewUrl: verification.idCardBackUrl ?? values.documents.idBack.previewUrl
       },
       idFront: {
         fileName: values.documents.idFront.fileName,
-        mediaId: verification.idCardFrontMediaId,
+        mediaId: verification.idCardFrontMediaId ?? null,
         previewUrl: verification.idCardFrontUrl ?? values.documents.idFront.previewUrl
       },
       selfieWithId: {
         fileName: values.documents.selfieWithId.fileName,
-        mediaId: verification.selfieWithIdMediaId,
+        mediaId: verification.selfieWithIdMediaId ?? null,
         previewUrl: verification.selfieWithIdUrl ?? values.documents.selfieWithId.previewUrl
       }
     },
