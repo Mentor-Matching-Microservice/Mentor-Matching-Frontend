@@ -293,7 +293,9 @@ export default function AdminMentorsPage() {
                     <div className='min-w-0 flex-1 space-y-4'>
                       <div className='flex flex-wrap items-start justify-between gap-3'>
                         <div>
-                          <h2 className='text-ink text-lg font-semibold'>{mentor.fullName}</h2>
+                          <h2 className='text-ink text-lg font-semibold'>
+                            {mentor.fullName || 'Chưa cập nhật họ tên'}
+                          </h2>
                           <p className='text-muted mt-1 text-sm'>
                             {mentor.headline || 'Chưa cập nhật tiêu đề'}
                           </p>
@@ -306,9 +308,10 @@ export default function AdminMentorsPage() {
 
                       <div className='text-muted grid gap-2 text-sm md:grid-cols-2'>
                         <p>
-                          {mentor.currentPosition} tại {mentor.workplace}
+                          {[mentor.currentPosition, mentor.workplace].filter(Boolean).join(' tại ') ||
+                            'Chưa cập nhật công việc'}
                         </p>
-                        <p>Kinh nghiệm: {mentor.experienceYears} năm</p>
+                        <p>Kinh nghiệm: {mentor.experienceYears ?? 0} năm</p>
                         <p>
                           Ngày nộp: {mentor.createdAt ? formatDateTime(mentor.createdAt) : 'N/A'}
                         </p>
@@ -389,8 +392,12 @@ export default function AdminMentorsPage() {
                     <div className='min-w-0 flex-1 space-y-4'>
                       <div className='flex flex-wrap items-start justify-between gap-3'>
                         <div>
-                          <h2 className='text-ink text-lg font-semibold'>{mentor.fullName}</h2>
-                          <p className='text-muted mt-1 text-sm'>{mentor.headline}</p>
+                          <h2 className='text-ink text-lg font-semibold'>
+                            {mentor.fullName || 'Chưa cập nhật họ tên'}
+                          </h2>
+                          <p className='text-muted mt-1 text-sm'>
+                            {mentor.headline || 'Chưa cập nhật tiêu đề'}
+                          </p>
                         </div>
                         <div className='flex flex-wrap gap-2'>
                           <StatusBadge kind='approval' status={mentor.approvalStatus} />
@@ -400,9 +407,10 @@ export default function AdminMentorsPage() {
 
                       <div className='text-muted grid gap-2 text-sm md:grid-cols-3'>
                         <p>
-                          {mentor.currentPosition} tại {mentor.workplace}
+                          {[mentor.currentPosition, mentor.workplace].filter(Boolean).join(' tại ') ||
+                            'Chưa cập nhật công việc'}
                         </p>
-                        <p>{mentor.experienceYears} năm kinh nghiệm</p>
+                        <p>{mentor.experienceYears ?? 0} năm kinh nghiệm</p>
                         <p>
                           Gia nhập: {mentor.createdAt ? formatDateTime(mentor.createdAt) : 'N/A'}
                         </p>

@@ -26,10 +26,11 @@ export const formatDateTime = (value: string | null) => {
 
 export const formatTimeRange = (startTime: string, endTime: string) => `${startTime} - ${endTime}`
 
-export const getInitials = (name: string) =>
-  name
-    .split(' ')
+export const getInitials = (name?: string | null) =>
+  (name || 'M')
+    .trim()
+    .split(/\s+/)
     .filter(Boolean)
     .slice(-2)
     .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
+    .join('') || 'M'
