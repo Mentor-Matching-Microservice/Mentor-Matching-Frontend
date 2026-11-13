@@ -263,10 +263,15 @@ function mapCurrentMentorVerificationToFormValues(
 }
 
 function getVerificationErrorMessage(error: unknown) {
-  if (axios.isAxiosError<ErrorResponse>(error)) {
+  if (axios.isAxiosError<any>(error)) {
     if (!error.response) return 'Không kết nối được máy chủ.'
 
-    return error.response.data?.message || 'Không thể xử lý ảnh hoặc lưu xác minh lúc này.'
+    return (
+      error.response.data?.message ||
+      error.response.data?.detail ||
+      error.response.data?.title ||
+      'Không thể xử lý ảnh hoặc lưu xác minh lúc này.'
+    )
   }
 
   if (error instanceof Error) {
