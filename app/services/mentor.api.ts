@@ -624,7 +624,10 @@ const defaultMentorApi = {
           idCardNumber: payload.idCardNumber ?? null,
           idCardFrontUrl: payload.idCardFrontUrl,
           idCardBackUrl: payload.idCardBackUrl,
-          selfieWithIdUrl: payload.selfieWithIdUrl ?? null
+          selfieWithIdUrl: payload.selfieWithIdUrl ?? null,
+          idCardFrontMediaId: payload.idCardFrontMediaId ? String(payload.idCardFrontMediaId) : null,
+          idCardBackMediaId: payload.idCardBackMediaId ? String(payload.idCardBackMediaId) : null,
+          selfieWithIdMediaId: payload.selfieWithIdMediaId ? String(payload.selfieWithIdMediaId) : null
         }
       )
     ).data,

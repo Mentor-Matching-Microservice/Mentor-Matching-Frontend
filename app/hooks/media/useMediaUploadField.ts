@@ -8,7 +8,7 @@ import type { MediaPurposeApi, MediaResourceTypeApi } from '@/types/api/media'
 
 export type MediaUploadFieldValue = {
   fileName: string
-  mediaId: number | null
+  mediaId: number | string | null
   previewUrl: string
 }
 
@@ -67,7 +67,7 @@ export function useMediaUploadField({
 
       setValue({
         fileName: file.name,
-        mediaId: uploadResponse.data.id,
+        mediaId: uploadResponse.data.assetId || uploadResponse.data.id,
         previewUrl: uploadResponse.data.deliveryUrl ?? localPreviewUrl
       })
     } catch (error) {

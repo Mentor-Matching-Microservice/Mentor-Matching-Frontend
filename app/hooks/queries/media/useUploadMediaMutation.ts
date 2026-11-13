@@ -96,7 +96,16 @@ async function uploadToProvider(
   })
 
   if (!response.ok) {
-    throw new Error('Không thể tải tệp lên nhà cung cấp lưu trữ.')
+    const errorText = await response.text().catch(() => '')
+    try {
+      const parsed = JSON.parse(errorText)
+      throw new Error(parsed?.error?.message || 'Không thể tải tệp lên nhà cung cấp lưu trữ.')
+    } catch (e: any) {
+      if (e?.message && e.message !== 'Không thể tải tệp lên nhà cung cấp lưu trữ.') {
+        throw e
+      }
+      throw new Error('Không thể tải tệp lên nhà cung cấp lưu trữ.')
+    }
   }
 
   return (await response.json()) as CloudinaryUploadResponse

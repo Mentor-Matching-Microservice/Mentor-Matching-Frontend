@@ -50,9 +50,10 @@ function unwrapPayload(responseBody: unknown): Record<string, unknown> {
 }
 
 function buildUploadFormFields(raw: Record<string, unknown>): Record<string, string> {
-  if (raw.formFields && typeof raw.formFields === 'object' && !Array.isArray(raw.formFields)) {
+  const fieldsSource = (raw.fields || raw.formFields) as Record<string, unknown> | undefined
+  if (fieldsSource && typeof fieldsSource === 'object' && !Array.isArray(fieldsSource)) {
     const normalized: Record<string, string> = {}
-    Object.entries(raw.formFields as Record<string, unknown>).forEach(([key, value]) => {
+    Object.entries(fieldsSource).forEach(([key, value]) => {
       if (value !== undefined && value !== null && String(value) !== '') {
         normalized[key] = String(value)
       }
