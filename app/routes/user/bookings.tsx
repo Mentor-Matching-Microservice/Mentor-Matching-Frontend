@@ -273,15 +273,27 @@ export default function UserBookingsPage() {
   const filteredBookings = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase()
 
-    return bookings.filter((booking) => {
-      const matchesSearch =
-        normalizedQuery.length === 0 ||
-        booking.mentorName.toLowerCase().includes(normalizedQuery) ||
-        booking.subjectName.toLowerCase().includes(normalizedQuery) ||
-        booking.gradeName.toLowerCase().includes(normalizedQuery)
+    return bookings
+      .filter((booking) => {
+        const matchesSearch =
+          normalizedQuery.length === 0 ||
+          booking.mentorName.toLowerCase().includes(normalizedQuery) ||
+          booking.subjectName.toLowerCase().includes(normalizedQuery) ||
+          booking.gradeName.toLowerCase().includes(normalizedQuery)
 
-      return matchesSearch
-    })
+        return matchesSearch
+      })
+      .sort((left, right) => {
+        const timeA = left.createdAt ? new Date(left.createdAt).getTime() : 0
+        const timeB = right.createdAt ? new Date(right.createdAt).getTime() : 0
+        if (timeA !== timeB) return timeB - timeA
+
+        const sessionA = `${left.bookingDate}T${left.startTime}`
+        const sessionB = `${right.bookingDate}T${right.startTime}`
+        if (sessionA !== sessionB) return sessionB.localeCompare(sessionA)
+
+        return (right.id ?? 0) - (left.id ?? 0)
+      })
   }, [bookings, searchQuery])
 
   const handleCreatePayment = (booking: BookingApiResponse) => {
