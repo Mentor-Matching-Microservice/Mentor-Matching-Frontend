@@ -735,25 +735,35 @@ const defaultMentorApi = {
   getAdminMentorDetail: async (
     mentorId: number
   ): Promise<ApiResponse<AdminMentorDetailApiResponse>> => {
+    let rawData: any
     try {
-      return (
-        await http.get<ApiResponse<AdminMentorDetailApiResponse>>(
-          MENTOR_ENDPOINTS.adminMentorDetail(mentorId)
-        )
-      ).data
+      const res = await http.get<ApiResponse<any>>(MENTOR_ENDPOINTS.adminMentorDetail(mentorId))
+      rawData = res.data.data
     } catch {
       const detailRes = await defaultMentorApi.getMentorDetail(mentorId)
-      const detail = detailRes.data
+      rawData = detailRes.data
+    }
 
-      return {
-        ...detailRes,
-        data: {
-          ...detail,
-          email: '',
-          phone: '',
-          approvalStatus: 'APPROVED',
-          approvalNote: null
-        }
+    const locations = await resolveLocations(
+      rawData?.hometownCityId ?? rawData?.hometown?.cityId,
+      rawData?.currentDistrictId ?? rawData?.currentLocation?.districtId,
+      rawData?.hometown,
+      rawData?.currentLocation
+    )
+
+    return {
+      status: 200,
+      code: 'SUCCESS',
+      success: true,
+      message: 'Get admin mentor detail successfully',
+      data: {
+        ...rawData,
+        email: rawData?.email || '',
+        phone: rawData?.phone || '',
+        approvalStatus: rawData?.approvalStatus || 'PENDING',
+        approvalNote: rawData?.approvalNote || rawData?.rejectionReason || null,
+        hometown: locations.hometown,
+        currentLocation: locations.currentLocation
       }
     }
   },

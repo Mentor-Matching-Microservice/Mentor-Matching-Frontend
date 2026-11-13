@@ -213,15 +213,15 @@ export default function BecomeMentorPage() {
         ...current,
         avatarMediaId: savedCurrentMentor.avatarMediaId,
         avatarUrl: savedCurrentMentor.avatarUrl ?? current.avatarUrl,
-        currentCityId: savedCurrentMentor.currentLocation.cityId
+        currentCityId: savedCurrentMentor.currentLocation?.cityId
           ? String(savedCurrentMentor.currentLocation.cityId)
           : values.currentCityId,
-        currentDistrictId: savedCurrentMentor.currentLocation.districtId
+        currentDistrictId: savedCurrentMentor.currentLocation?.districtId
           ? String(savedCurrentMentor.currentLocation.districtId)
           : values.currentDistrictId,
         currentLocation:
-          savedCurrentMentor.currentLocation.districtName ||
-          savedCurrentMentor.currentLocation.cityName ||
+          savedCurrentMentor.currentLocation?.districtName ||
+          savedCurrentMentor.currentLocation?.cityName ||
           values.currentDistrictId,
         currentPosition: values.currentPosition ?? '',
         education: values.education,
@@ -229,8 +229,8 @@ export default function BecomeMentorPage() {
         fullName: savedCurrentMentor.fullName || values.fullName,
         gender: savedCurrentMentor.gender ?? values.gender ?? '',
         headline: values.headline,
-        hometown: savedCurrentMentor.hometown.cityName || values.hometownCityId,
-        hometownCityId: savedCurrentMentor.hometown.cityId
+        hometown: savedCurrentMentor.hometown?.cityName || values.hometownCityId,
+        hometownCityId: savedCurrentMentor.hometown?.cityId
           ? String(savedCurrentMentor.hometown.cityId)
           : values.hometownCityId,
         introduction: values.introduction,
@@ -731,8 +731,8 @@ function mapCurrentMentorBootstrapToFormState({
     avatarMediaId: currentMentor.avatarMediaId,
     avatarUrl: currentMentor.avatarUrl ?? '',
     currentLocation:
-      currentMentor.currentLocation.districtName || currentMentor.currentLocation.cityName || '',
-    hometown: currentMentor.hometown.cityName || '',
+      currentMentor.currentLocation?.districtName || currentMentor.currentLocation?.cityName || '',
+    hometown: currentMentor.hometown?.cityName || '',
     offerings: subjects.map(mapMentorSubjectToBecomeMentorOffering),
     availabilities: availabilities.map(mapMentorAvailabilityToBecomeMentorAvailabilityWindow),
     documents: verification

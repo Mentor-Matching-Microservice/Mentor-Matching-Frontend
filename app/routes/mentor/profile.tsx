@@ -47,6 +47,10 @@ import { useUpdateCurrentMentorAchievementMutation } from '@/hooks/queries/mento
 import { useUpdateCurrentMentorTraitsMutation } from '@/hooks/queries/mentor/useUpdateCurrentMentorTraitsMutation'
 import { useUpsertCurrentMentorSubjectMutation } from '@/hooks/queries/mentor/useUpsertCurrentMentorSubjectMutation'
 import { formatMeetingTypeLabel } from '@/features/mentor-profile/mentor-profile.mapper'
+import { ReviewRatingSummary } from '@/features/review/components/ReviewRatingSummary'
+import { ReviewItem } from '@/features/review/components/ReviewItem'
+import { useMentorRatingSummaryQuery } from '@/hooks/queries/review/useMentorRatingSummaryQuery'
+import { useMentorReviewsQuery } from '@/hooks/queries/review/useMentorReviewsQuery'
 import type { ErrorResponse } from '@/types/api/common'
 import type {
   CurrentMentorApiResponse,
@@ -84,7 +88,7 @@ type AchievementDraft = {
   isNew: boolean
 }
 
-type ProfileTabKey = 'general' | 'traits' | 'achievements' | 'offerings'
+type ProfileTabKey = 'general' | 'traits' | 'achievements' | 'offerings' | 'reviews'
 
 const emptyDraft: MentorProfileDraft = {
   headline: '',
@@ -96,7 +100,8 @@ const profileTabs: Array<{ key: ProfileTabKey; label: string; icon: typeof BookO
   { key: 'general', label: 'Thông tin chung', icon: BookOpenText },
   { key: 'traits', label: 'Nổi bật & Đặc điểm', icon: Sparkles },
   { key: 'achievements', label: 'Thành tựu', icon: Award },
-  { key: 'offerings', label: 'Offerings & Pricing', icon: GraduationCap }
+  { key: 'offerings', label: 'Offerings & Pricing', icon: GraduationCap },
+  { key: 'reviews', label: 'Đánh giá', icon: Star }
 ]
 
 const proficiencyLabelMap: Record<MentorProficiencyLevelApiResponse, string> = {
@@ -412,6 +417,12 @@ export default function MentorProfilePage() {
   const [offeringsErrorMessage, setOfferingsErrorMessage] = useState<string | null>(null)
 
   const currentMentor = profileBundle?.currentMentor
+  const { data: ratingSummary } = useMentorRatingSummaryQuery(currentMentor?.id ?? 0)
+  const reviewsQuery = useMentorReviewsQuery(currentMentor?.id ?? 0, {
+    size: 10,
+    sortBy: 'createdAt',
+    sortDir: 'desc'
+  } as any)
   const sourceFormValues = currentMentor ? mapMentorToFormValues(currentMentor) : emptyDraft
   const formValues = draftFormValues ?? sourceFormValues
   const isSubmitting = updateCurrentMentorMutation.isPending
@@ -1563,6 +1574,65 @@ export default function MentorProfilePage() {
               </CardContent>
             </Card>
           ) : null}
+
+          {activeTab === 'reviews' ? (
+            <Card className='rounded-[26px] border-slate-200 shadow-none'>
+              <CardContent className='space-y-6 p-6'>
+                <div className='space-y-1'>
+                  <p className='text-ink text-[1.9rem] font-bold tracking-tight'>
+                    Đánh giá từ học viên
+                  </p>
+                  <p className='text-sm text-slate-500'>
+                    Xem tổng quan điểm đánh giá và nhận xét thực tế từ các học viên đã hoàn thành buổi học.
+                  </p>
+                </div>
+
+                {ratingSummary && ratingSummary.totalReviews > 0 ? (
+                  <div className='space-y-8 pt-4'>
+                    <div className='rounded-2xl border border-slate-200 bg-slate-50/60 p-6'>
+                      <ReviewRatingSummary summary={ratingSummary} />
+                    </div>
+
+                    <div className='space-y-4'>
+                      <h3 className='text-base font-bold text-slate-900'>
+                        Danh sách nhận xét ({ratingSummary.totalReviews})
+                      </h3>
+                      <div className='divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white p-4'>
+                        {reviewsQuery.data?.pages.map((page, i) => (
+                          <div key={i} className='space-y-2'>
+                            {page.data.map((review) => (
+                              <ReviewItem key={review.id} review={review} />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+
+                      {reviewsQuery.hasNextPage && (
+                        <div className='flex justify-center pt-2'>
+                          <Button
+                            variant='outline'
+                            className='rounded-xl px-6'
+                            onClick={() => void reviewsQuery.fetchNextPage()}
+                            disabled={reviewsQuery.isFetchingNextPage}
+                          >
+                            {reviewsQuery.isFetchingNextPage ? 'Đang tải...' : 'Xem thêm đánh giá'}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className='rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center'>
+                    <Star className='mx-auto h-10 w-10 text-slate-300' />
+                    <p className='mt-3 text-base font-semibold text-slate-800'>Chưa có đánh giá nào</p>
+                    <p className='mt-1 text-sm text-slate-500 max-w-md mx-auto'>
+                      Đánh giá sẽ tự động hiển thị ở đây và trên trang công khai khi học viên hoàn thành các buổi học và để lại phản hồi.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
 
         <aside className='space-y-6'>
@@ -1652,10 +1722,24 @@ export default function MentorProfilePage() {
                 </p>
               </div>
               <div className='flex flex-wrap gap-2'>
-                <Badge variant='warning'>
-                  <Star size={14} />
-                  Chưa có đánh giá
-                </Badge>
+                {ratingSummary && ratingSummary.totalReviews > 0 ? (
+                  <button
+                    type='button'
+                    onClick={() => setActiveTab('reviews')}
+                    className='focus:outline-none'
+                    title='Xem chi tiết đánh giá'
+                  >
+                    <Badge variant='warning' className='flex items-center gap-1 font-semibold text-amber-700 hover:bg-amber-100 cursor-pointer transition'>
+                      <Star size={14} className='fill-amber-400 text-amber-500' />
+                      {ratingSummary.averageRating.toFixed(1)} ({ratingSummary.totalReviews})
+                    </Badge>
+                  </button>
+                ) : (
+                  <Badge variant='outline' className='flex items-center gap-1 text-slate-400'>
+                    <Star size={14} />
+                    Chưa có đánh giá
+                  </Badge>
+                )}
                 {previewPrice !== null ? (
                   <Badge variant='info'>{formatPrice(previewPrice)}/giờ</Badge>
                 ) : null}

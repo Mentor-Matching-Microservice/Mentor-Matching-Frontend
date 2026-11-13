@@ -43,6 +43,7 @@ export type MentorProfileReview = {
 export type MentorProfileViewModel = {
   id: string
   mentorId: number
+  userId: string | null
   name: string
   avatarUrl: string | null
   headline: string
@@ -100,6 +101,7 @@ export function mapMentorProfileToViewModel(
   return {
     id: String(detail.id),
     mentorId: detail.id,
+    userId: detail.userId ? String(detail.userId) : null,
     name: detail.fullName,
     avatarUrl: detail.avatarUrl || null,
     headline:

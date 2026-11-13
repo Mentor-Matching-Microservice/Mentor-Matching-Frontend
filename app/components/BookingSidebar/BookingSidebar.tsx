@@ -57,6 +57,12 @@ const BookingSidebar = ({
       ? [selectedSlot, ...nearestSlots.slice(0, 2)]
       : nearestSlots
   const currentUser = currentUserQuery.data
+  const isSelf = Boolean(
+    currentUser &&
+    mentor.userId &&
+    String(currentUser.id) === String(mentor.userId)
+  )
+  const isMentorUser = Boolean(currentUser?.roles.includes('MENTOR'))
   const isLearner = currentUser?.roles.includes('LEARNER') ?? false
   const isLoggedIn = Boolean(accessToken)
   const resolvedPrice = activeOffering?.pricePerHour ?? mentor.startingPrice
@@ -69,6 +75,7 @@ const BookingSidebar = ({
   const canSubmit = Boolean(
     isLoggedIn &&
     isLearner &&
+    !isSelf &&
     activeOffering &&
     selectedSlot &&
     selectedMeetingType &&
@@ -77,6 +84,9 @@ const BookingSidebar = ({
   const redirectTo = `${path.login}?redirectTo=${encodeURIComponent(`${location.pathname}${location.search}`)}`
 
   const actionHint = (() => {
+    if (isSelf) return 'Bạn đang xem hồ sơ của chính mình. Mentor không thể tự đặt lịch cho bản thân.'
+    if (isLoggedIn && !isLearner && isMentorUser)
+      return 'Tài khoản Mentor không thể đặt lịch học. Vui lòng đăng nhập tài khoản Học viên.'
     if (!activeOffering) return 'Mentor chưa có môn học đang mở.'
     if (isCalendarLoading) return 'Đang tải lịch trống của mentor.'
     if (!visibleSlots.length) return 'Mentor chưa mở lịch trong tuần này.'
@@ -230,6 +240,13 @@ const BookingSidebar = ({
           </dl>
         </div>
 
+        {isSelf ? (
+          <div className='mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 leading-relaxed'>
+            <span className='font-bold block mb-1'>Lưu ý cho Mentor:</span>
+            Bạn đang xem trang công khai của chính mình. Mentor không thể tự đặt lịch học với chính mình. Để thử tính năng đặt lịch, vui lòng đăng nhập tài khoản Học viên (ví dụ: <code className='font-semibold'>learner01@mentor-matching.local</code>).
+          </div>
+        ) : null}
+
         {createBookingMutation.isError ? (
           <p className='mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700'>
             {getBookingErrorMessage(createBookingMutation.error)}
@@ -336,9 +353,28 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 function getBookingErrorMessage(error: unknown) {
-  if (axios.isAxiosError<ErrorResponse>(error)) {
+  if (axios.isAxiosError(error)) {
     if (!error.response) return 'Không kết nối được máy chủ để gửi yêu cầu.'
-    return error.response.data?.message || 'Không thể gửi yêu cầu lúc này.'
+    const data = error.response.data as Record<string, any> | undefined
+    const msg = ((data?.detail || data?.message || data?.title || '') as string).trim()
+
+    if (
+      msg.toLowerCase().includes('cannot book') ||
+      msg.toLowerCase().includes('own session')
+    ) {
+      return 'Bạn đang đăng nhập bằng tài khoản Mentor của chính mình. Vui lòng đăng nhập tài khoản Học viên (Learner) để đặt lịch học.'
+    }
+    if (
+      msg.toLowerCase().includes('already booked') ||
+      msg.toLowerCase().includes('already held') ||
+      msg.toLowerCase().includes('conflict')
+    ) {
+      return 'Khung giờ này đã có người đặt hoặc đang giữ chỗ. Vui lòng chọn khung giờ khác.'
+    }
+    if (msg.toLowerCase().includes('not available')) {
+      return 'Mentor không mở lịch trong khung giờ này. Vui lòng chọn khung giờ khác trong danh sách.'
+    }
+    return msg || 'Không thể gửi yêu cầu lúc này.'
   }
 
   return 'Không thể gửi yêu cầu lúc này.'

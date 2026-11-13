@@ -81,7 +81,7 @@ export function MentorProfileDetailModal({ mentorId, onOpenChange }: MentorProfi
                     {mentor.fullName}
                   </h3>
                   <p className='text-muted mt-1 text-sm'>
-                    {mentor.email} · {mentor.phone}
+                    {[mentor.email, mentor.phone].filter(Boolean).join(' · ') || 'Chưa có thông tin liên hệ'}
                   </p>
                 </div>
                 <div className='flex flex-wrap gap-2'>
@@ -100,14 +100,19 @@ export function MentorProfileDetailModal({ mentorId, onOpenChange }: MentorProfi
                 <DetailRow
                   label='Khu vực'
                   value={
-                    [mentor.currentLocation.districtName, mentor.currentLocation.cityName]
+                    [mentor.currentLocation?.districtName, mentor.currentLocation?.cityName]
                       .filter(Boolean)
                       .join(', ') || null
                   }
                 />
                 <DetailRow label='Ngày nộp hồ sơ' value={formatDateTime(mentor.createdAt)} />
                 <DetailRow label='Cập nhật gần nhất' value={formatDateTime(mentor.updatedAt)} />
-                {mentor.approvalNote && <DetailRow label='Ghi chú duyệt' value={mentor.approvalNote} />}
+                {(mentor.approvalNote || (mentor as any).rejectionReason) && (
+                  <DetailRow
+                    label='Ghi chú duyệt'
+                    value={mentor.approvalNote || (mentor as any).rejectionReason}
+                  />
+                )}
               </div>
 
               {mentor.introduction && (
