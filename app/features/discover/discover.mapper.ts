@@ -10,6 +10,9 @@ export function mapDiscoverMentorToCard(mentor: MentorListItemApiResponse): Ment
     3
   )
 
+  const ratingValue = mentor.averageRating ?? mentor.rating ?? null
+  const reviewsCountValue = mentor.totalReviews ?? mentor.reviewsCount ?? null
+
   return {
     id: String(mentor.id),
     name: mentor.fullName,
@@ -19,10 +22,10 @@ export function mapDiscoverMentorToCard(mentor: MentorListItemApiResponse): Ment
       mentor.headline?.trim() ||
       [mentor.currentPosition, mentor.workplace].filter(Boolean).join(' · ') ||
       'Mentor công khai đang sẵn sàng cho học viên mới.',
-    approvalStatus: null,
-    verificationStatus: null,
-    rating: null,
-    reviewsCount: null,
+    approvalStatus: 'APPROVED',
+    verificationStatus: 'VERIFIED',
+    rating: ratingValue !== null && ratingValue > 0 ? ratingValue : null,
+    reviewsCount: reviewsCountValue,
     responseTime: null,
     activeStudentsCount: null,
     startingPrice: mentor.minPrice,

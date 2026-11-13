@@ -101,6 +101,11 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
                     aria-label={`Đánh giá ${mentor.rating.toFixed(1)} trên 5 sao`}
                   >
                     ★ {mentor.rating.toFixed(1)}
+                    {typeof mentor.reviewsCount === 'number' && mentor.reviewsCount > 0 ? (
+                      <span className='ml-1 text-xs font-normal text-slate-500'>
+                        ({mentor.reviewsCount})
+                      </span>
+                    ) : null}
                   </span>
                 ) : (
                   <span className='shrink-0 text-sm font-medium text-slate-400'>

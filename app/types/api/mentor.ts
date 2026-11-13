@@ -140,6 +140,10 @@ export type MentorListItemApiResponse = {
   minPrice?: number | null
   createdAt: string | null
   updatedAt?: string | null
+  averageRating?: number | null
+  totalReviews?: number | null
+  rating?: number | null
+  reviewsCount?: number | null
 }
 
 export type MentorDetailApiResponse = {
