@@ -3,6 +3,8 @@ export const path = {
   forbidden: '/forbidden',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   becomeMentor: '/become-mentor',
   paymentSuccess: '/payment/success',
   paymentCancel: '/payment/cancel',

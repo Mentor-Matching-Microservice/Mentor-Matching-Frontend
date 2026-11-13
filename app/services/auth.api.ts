@@ -9,7 +9,9 @@ const AUTH_ENDPOINTS = {
   login: 'auth/login',
   register: 'auth/register',
   refreshToken: 'auth/refresh-token',
-  logout: 'auth/logout'
+  logout: 'auth/logout',
+  forgotPassword: 'auth/forgot-password',
+  resetPassword: 'auth/reset-password'
 } as const
 
 const defaultAuthApi = {
@@ -23,7 +25,17 @@ const defaultAuthApi = {
     (await http.post<ApiResponse<AuthApiResponse>>(AUTH_ENDPOINTS.refreshToken, {})).data,
 
   logout: async (): Promise<ApiResponse<null>> =>
-    (await http.post<ApiResponse<null>>(AUTH_ENDPOINTS.logout, {})).data
+    (await http.post<ApiResponse<null>>(AUTH_ENDPOINTS.logout, {})).data,
+
+  forgotPassword: async (payload: { email: string }): Promise<ApiResponse<null>> =>
+    (await http.post<ApiResponse<null>>(AUTH_ENDPOINTS.forgotPassword, payload)).data,
+
+  resetPassword: async (payload: {
+    token: string
+    password: string
+    confirmPassword: string
+  }): Promise<ApiResponse<null>> =>
+    (await http.post<ApiResponse<null>>(AUTH_ENDPOINTS.resetPassword, payload)).data
 }
 
 export const authApi = env.useMock ? mockAuthApi : defaultAuthApi
