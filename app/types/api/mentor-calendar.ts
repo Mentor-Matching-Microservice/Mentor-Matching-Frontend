@@ -5,7 +5,8 @@ export type MentorCalendarWindowApiResponse = {
 
 export type MentorCalendarDateApiResponse = {
   date: string
-  availableWindows: MentorCalendarWindowApiResponse[]
+  availableWindows?: MentorCalendarWindowApiResponse[]
+  windows?: MentorCalendarWindowApiResponse[]
 }
 
 export type MentorCalendarApiResponse = {

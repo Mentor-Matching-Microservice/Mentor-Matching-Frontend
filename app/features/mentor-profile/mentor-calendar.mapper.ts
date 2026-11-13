@@ -25,9 +25,11 @@ export type MentorCalendarViewModel = {
 export function mapMentorCalendarToViewModel(
   calendar: MentorCalendarApiResponse
 ): MentorCalendarViewModel {
-  const slots = calendar.dates
-    .flatMap((date) =>
-      date.availableWindows.map<MentorCalendarSlotViewModel>((window) => ({
+  const dates = calendar?.dates ?? []
+  const slots = dates
+    .flatMap((date) => {
+      const windows = date.availableWindows ?? date.windows ?? []
+      return windows.map<MentorCalendarSlotViewModel>((window) => ({
         id: buildCalendarSlotId(calendar.mentorId, date.date, window.startTime, window.endTime),
         date: date.date,
         startTime: window.startTime,
@@ -35,7 +37,7 @@ export function mapMentorCalendarToViewModel(
         isBookable: true,
         isNearestBookable: false
       }))
-    )
+    })
     .sort(compareCalendarSlots)
 
   const nearestBookableSlot = slots.find((slot) => slot.isBookable)
@@ -48,7 +50,7 @@ export function mapMentorCalendarToViewModel(
     mentorId: calendar.mentorId,
     from: calendar.from,
     to: calendar.to,
-    dates: calendar.dates.map((date) => ({
+    dates: dates.map((date) => ({
       date: date.date,
       slots: slotsWithNearest.filter((slot) => slot.date === date.date)
     })),
