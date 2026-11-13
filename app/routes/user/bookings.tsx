@@ -72,9 +72,18 @@ function getBookingFilterLabel(filter: BookingFilter) {
 }
 
 function getPaymentErrorMessage(error: unknown) {
-  if (axios.isAxiosError<ErrorResponse>(error)) {
+  if (axios.isAxiosError(error)) {
     if (!error.response) return 'Không thể kết nối để bắt đầu thanh toán.'
-    return error.response.data?.message || 'Không thể bắt đầu thanh toán lúc này.'
+    const data = error.response.data as Record<string, any> | undefined
+    const msg = ((data?.detail || data?.message || data?.error || '') as string).trim()
+
+    if (msg.toLowerCase().includes('hold expired') || msg.toLowerCase().includes('not payable')) {
+      return 'Buổi học đã hết thời gian giữ chỗ (15 phút). Vui lòng đặt lại lịch mới.'
+    }
+    if (msg.toLowerCase().includes('service unavailable') || msg.toLowerCase().includes('stripe')) {
+      return 'Cổng thanh toán đang được bảo trì. Vui lòng thử lại sau.'
+    }
+    return msg || 'Không thể bắt đầu thanh toán lúc này.'
   }
 
   return 'Không thể bắt đầu thanh toán lúc này.'
