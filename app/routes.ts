@@ -9,6 +9,8 @@ export default [
     route('mentor-profile/:id', 'routes/mentor-profile.tsx'),
     route('payment/success', 'routes/payment/success.tsx'),
     route('payment/cancel', 'routes/payment/cancel.tsx'),
+    route('payments/success', 'routes/payment/success.tsx', { id: 'payments-success' }),
+    route('payments/cancel', 'routes/payment/cancel.tsx', { id: 'payments-cancel' }),
     route('notifications', 'routes/notifications.tsx')
   ]),
 

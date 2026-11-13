@@ -22,6 +22,17 @@ export const path = {
   mentorPanel: {
     root: '/mentor',
     schedule: '/mentor/schedule',
+    bookings: '/mentor/schedule',
+    students: '/mentor/students',
+    earnings: '/mentor/earnings',
+    profile: '/mentor/profile',
+    verification: '/mentor/verification'
+  },
+
+  mentor: {
+    root: '/mentor',
+    schedule: '/mentor/schedule',
+    bookings: '/mentor/schedule',
     students: '/mentor/students',
     earnings: '/mentor/earnings',
     profile: '/mentor/profile',
