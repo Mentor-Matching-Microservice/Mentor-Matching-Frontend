@@ -123,7 +123,7 @@ export default function MentorDashboardPage() {
     <DashboardPage
       className='space-y-8 md:space-y-10'
       description='Theo dõi lịch dạy, thu nhập và danh sách học viên đang đồng hành.'
-      title='Tổng quan Cố vấn'
+      title='Tổng quan Mentor'
     >
       <div className='space-y-6'>
         <div className='flex flex-wrap items-center gap-2 text-sm text-slate-500'>

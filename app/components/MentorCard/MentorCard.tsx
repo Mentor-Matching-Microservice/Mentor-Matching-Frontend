@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, CalendarDays, Clock3, GraduationCap } from 'lucide-react'
+import { BriefcaseBusiness, CalendarDays, Clock3, GraduationCap, Star } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router'
 
@@ -96,17 +96,18 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
                   {mentor.name}
                 </Link>
                 {mentor.rating !== null && mentor.rating !== undefined ? (
-                  <span
-                    className='shrink-0 text-base font-semibold text-amber-600'
+                  <div
+                    className='flex shrink-0 items-center gap-1 text-sm'
                     aria-label={`Đánh giá ${mentor.rating.toFixed(1)} trên 5 sao`}
                   >
-                    ★ {mentor.rating.toFixed(1)}
+                    <Star className='h-4 w-4 fill-[#f59e0b] text-[#f59e0b]' />
+                    <span className='font-bold text-slate-900'>{mentor.rating.toFixed(1)}</span>
                     {typeof mentor.reviewsCount === 'number' && mentor.reviewsCount > 0 ? (
-                      <span className='ml-1 text-xs font-normal text-slate-500'>
+                      <span className='font-medium text-slate-500'>
                         ({mentor.reviewsCount})
                       </span>
                     ) : null}
-                  </span>
+                  </div>
                 ) : (
                   <span className='shrink-0 text-sm font-medium text-slate-400'>
                     Chưa có đánh giá
@@ -116,7 +117,7 @@ const MentorCard = ({ mentor }: MentorCardProps) => {
               {mentor.verificationStatus === 'VERIFIED' && mentor.approvalStatus === 'APPROVED' ? (
                 <div className='mt-1 flex flex-wrap gap-1'>
                   <Badge className='px-2 py-0.5 text-[10px] font-semibold tracking-wide' variant='success'>
-                    ✓ Cố vấn đã chứng thực
+                    ✓ Mentor đã chứng thực
                   </Badge>
                 </div>
               ) : mentor.verificationStatus === 'VERIFIED' ? (
