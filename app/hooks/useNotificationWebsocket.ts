@@ -13,8 +13,8 @@ export function useNotificationWebsocket() {
   useEffect(() => {
     if (!accessToken) return
 
-    // Chuyển http:// thành ws:// hoặc https:// thành wss://
-    const wsUrl = env.apiOrigin.replace(/^http/, 'ws') + '/ws/notifications'
+    // Kết nối trực tiếp tới WebSocket endpoint của notification-service
+    const wsUrl = `${env.wsOrigin}/ws/notifications`
 
     const client = new Client({
       brokerURL: wsUrl,

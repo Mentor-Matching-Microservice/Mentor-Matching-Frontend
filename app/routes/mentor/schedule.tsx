@@ -8,6 +8,7 @@ import {
   Link as LinkIcon,
   NotebookText,
   Plus,
+  Trash2,
   XCircle
 } from 'lucide-react'
 import { Link } from 'react-router'
@@ -27,6 +28,7 @@ import { useCompleteBookingByMentorMutation } from '@/hooks/queries/booking/useC
 import { useCurrentMentorBookingsQuery } from '@/hooks/queries/booking/useCurrentMentorBookingsQuery'
 import { useRejectBookingByMentorMutation } from '@/hooks/queries/booking/useRejectBookingByMentorMutation'
 import { useCurrentMentorScheduleQuery } from '@/hooks/queries/mentor/useCurrentMentorScheduleQuery'
+import { useDeleteCurrentMentorAvailabilityMutation } from '@/hooks/queries/mentor/useDeleteCurrentMentorAvailabilityMutation'
 import type { BookingApiResponse } from '@/types/api/booking'
 import type {
   MentorAvailabilityDetailApiResponse,
@@ -223,6 +225,7 @@ export default function MentorSchedulePage() {
   )
   const completeBookingMutation = useCompleteBookingByMentorMutation()
   const rejectBookingMutation = useRejectBookingByMentorMutation()
+  const deleteAvailabilityMutation = useDeleteCurrentMentorAvailabilityMutation()
 
   const handleRejectConfirm = (reason: string) => {
     if (!rejectBookingId) return
@@ -344,9 +347,21 @@ export default function MentorSchedulePage() {
                       </span>
                     </div>
 
-                    <span className='inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700'>
-                      Linh hoạt
-                    </span>
+                    <div className='flex items-center justify-between gap-2'>
+                      <span className='inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700'>
+                        Linh hoạt
+                      </span>
+                      <button
+                        aria-label={`Xóa khung giờ ${window.title}`}
+                        className='inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50'
+                        disabled={deleteAvailabilityMutation.isPending}
+                        onClick={() => deleteAvailabilityMutation.mutate(window.id)}
+                        type='button'
+                      >
+                        <Trash2 size={14} />
+                        Xóa
+                      </button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -405,9 +420,21 @@ export default function MentorSchedulePage() {
                       <p className='text-ink text-[0.98rem]'>{window.timeLabel}</p>
                     </div>
                   </div>
-                  <span className='inline-flex rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-700'>
-                    Ngắn hạn
-                  </span>
+                  <div className='flex items-center gap-2'>
+                    <span className='inline-flex rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-700'>
+                      Ngắn hạn
+                    </span>
+                    <button
+                      aria-label={`Xóa khung giờ ${window.title}`}
+                      className='inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50'
+                      disabled={deleteAvailabilityMutation.isPending}
+                      onClick={() => deleteAvailabilityMutation.mutate(window.id)}
+                      type='button'
+                    >
+                      <Trash2 size={14} />
+                      Xóa
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

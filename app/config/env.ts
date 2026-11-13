@@ -22,9 +22,27 @@ const apiServerUrl = new URL(parseApiBaseUrl(import.meta.env.VITE_API_BASE_URL))
 const apiOrigin = apiServerUrl.origin
 const apiBasePath = '/api/v1'
 
+const wsOrigin = (() => {
+  const rawWsUrl =
+    typeof import.meta.env.VITE_WS_BASE_URL === 'string'
+      ? import.meta.env.VITE_WS_BASE_URL.trim()
+      : ''
+  if (rawWsUrl) {
+    return rawWsUrl.replace(/\/+$/, '').replace(/^http/, 'ws')
+  }
+  if (
+    (apiServerUrl.hostname === 'localhost' || apiServerUrl.hostname === '127.0.0.1') &&
+    apiServerUrl.port === '8080'
+  ) {
+    return `ws://${apiServerUrl.hostname}:8089`
+  }
+  return apiOrigin.replace(/^http/, 'ws')
+})()
+
 export const env = {
   useMock: parseBooleanEnv(import.meta.env.VITE_USE_MOCK, false),
   apiOrigin,
+  wsOrigin,
   apiBasePath,
   apiBaseUrl: `${apiOrigin}${apiBasePath}/`
 }

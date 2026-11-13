@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { createPortal } from 'react-dom'
@@ -8,25 +9,58 @@ import {
   type MentorAvailabilityDraftValue
 } from '@/components/MentorAvailabilityForm/MentorAvailabilityForm'
 import { Button } from '@/components/ui/button'
+import { mapAvailabilityDraftToRequests } from '@/features/become-mentor/mappers/availability.mapper'
+import { useUpsertCurrentMentorAvailabilityMutation } from '@/hooks/queries/mentor/useUpsertCurrentMentorAvailabilityMutation'
+import type { ErrorResponse } from '@/types/api/common'
 
 type MentorAvailabilityModalProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+const initialDraft: MentorAvailabilityDraftValue = {
+  mode: 'RECURRING',
+  selectedDays: ['2', '4'],
+  specificDate: '',
+  startTime: '18:00',
+  endTime: '20:00'
+}
+
 export function MentorAvailabilityModal({ open, onOpenChange }: MentorAvailabilityModalProps) {
-  const [draft, setDraft] = useState<MentorAvailabilityDraftValue>({
-    mode: 'RECURRING',
-    selectedDays: ['2', '4'],
-    specificDate: '',
-    startTime: '18:00',
-    endTime: '20:00'
-  })
+  const [draft, setDraft] = useState<MentorAvailabilityDraftValue>(initialDraft)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const upsertAvailabilityMutation = useUpsertCurrentMentorAvailabilityMutation()
 
   const canSave = useMemo(() => isMentorAvailabilityDraftValid(draft), [draft])
 
   const handleClose = () => {
+    if (upsertAvailabilityMutation.isPending) return
+    setErrorMessage(null)
     onOpenChange(false)
+  }
+
+  const handleSave = async () => {
+    if (!canSave || upsertAvailabilityMutation.isPending) return
+    setErrorMessage(null)
+
+    try {
+      const saveRequests = mapAvailabilityDraftToRequests(draft, null)
+      for (const request of saveRequests) {
+        await upsertAvailabilityMutation.mutateAsync(request)
+      }
+      setDraft(initialDraft)
+      onOpenChange(false)
+    } catch (error) {
+      if (axios.isAxiosError<ErrorResponse>(error)) {
+        setErrorMessage(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            'Không thể lưu khung giờ lúc này. Vui lòng kiểm tra có bị trùng lịch không.'
+        )
+      } else {
+        setErrorMessage('Không thể lưu khung giờ lúc này. Vui lòng thử lại.')
+      }
+    }
   }
 
   if (typeof document === 'undefined' || !open) return null
@@ -46,13 +80,25 @@ export function MentorAvailabilityModal({ open, onOpenChange }: MentorAvailabili
           </button>
         </div>
 
-        <div className='overflow-visible px-7 py-6'>
-          <MentorAvailabilityForm onChange={setDraft} value={draft} />
+        <div className='space-y-4 overflow-visible px-7 py-6'>
+          <MentorAvailabilityForm
+            onChange={(next) => {
+              setErrorMessage(null)
+              setDraft(next)
+            }}
+            value={draft}
+          />
+          {errorMessage ? (
+            <p className='rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-600'>
+              {errorMessage}
+            </p>
+          ) : null}
         </div>
 
         <div className='flex items-center justify-end gap-3 border-t border-slate-200 px-7 py-4'>
           <Button
             className='h-12 rounded-xl border-slate-300 bg-white px-5 text-base text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+            disabled={upsertAvailabilityMutation.isPending}
             onClick={handleClose}
             variant='outline'
           >
@@ -60,8 +106,9 @@ export function MentorAvailabilityModal({ open, onOpenChange }: MentorAvailabili
           </Button>
           <Button
             className='h-12 rounded-xl px-6 text-base'
-            disabled={!canSave}
-            onClick={handleClose}
+            disabled={!canSave || upsertAvailabilityMutation.isPending}
+            isLoading={upsertAvailabilityMutation.isPending}
+            onClick={() => void handleSave()}
           >
             Lưu khung giờ
           </Button>
