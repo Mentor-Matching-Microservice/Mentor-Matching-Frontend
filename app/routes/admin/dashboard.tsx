@@ -78,13 +78,19 @@ export default function AdminDashboardPage() {
   const { data: statsOverview } = useAdminStatsOverviewQuery()
   const { data: statsTimeseries } = useAdminStatsTimeseriesQuery()
 
-  const bookingTrendData = (statsTimeseries ?? []).map((point) => ({
+  const points = Array.isArray(statsTimeseries)
+    ? statsTimeseries
+    : Array.isArray((statsTimeseries as any)?.points)
+      ? (statsTimeseries as any).points
+      : []
+
+  const bookingTrendData = points.map((point: any) => ({
     date: point.date,
-    value: point.bookingsCount
+    value: point.bookingsCount ?? 0
   }))
-  const revenueTrendData = (statsTimeseries ?? []).map((point) => ({
+  const revenueTrendData = points.map((point: any) => ({
     date: point.date,
-    value: point.revenue
+    value: point.revenue ?? 0
   }))
 
   return (

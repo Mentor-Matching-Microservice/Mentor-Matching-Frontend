@@ -5,6 +5,7 @@ import type { ApiResponse } from '@/types/api/common'
 import type {
   AdminStatsDailyPointApiResponse,
   AdminStatsOverviewApiResponse,
+  AdminStatsTimeseriesApiResponse,
   GetAdminStatsQueryParams
 } from '@/types/api/stats'
 
@@ -25,12 +26,16 @@ const defaultStatsApi = {
 
   getTimeseries: async (
     params?: GetAdminStatsQueryParams
-  ): Promise<ApiResponse<AdminStatsDailyPointApiResponse[]>> =>
+  ): Promise<ApiResponse<AdminStatsDailyPointApiResponse[] | AdminStatsTimeseriesApiResponse>> =>
     (
-      await http.get<ApiResponse<AdminStatsDailyPointApiResponse[]>>(STATS_ENDPOINTS.timeseries, {
-        params
-      })
+      await http.get<ApiResponse<AdminStatsDailyPointApiResponse[] | AdminStatsTimeseriesApiResponse>>(
+        STATS_ENDPOINTS.timeseries,
+        {
+          params
+        }
+      )
     ).data
 }
 
 export const statsApi = env.useMock ? mockStatsApi : defaultStatsApi
+
