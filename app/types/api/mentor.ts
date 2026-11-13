@@ -255,11 +255,11 @@ export type CurrentMentorVerificationApiResponse = {
   fullName: string | null
   idCardNumber: string | null
   idCardFrontUrl: string | null
-  idCardFrontMediaId?: number | null
+  idCardFrontMediaId?: number | string | null
   idCardBackUrl: string | null
-  idCardBackMediaId?: number | null
+  idCardBackMediaId?: number | string | null
   selfieWithIdUrl: string | null
-  selfieWithIdMediaId?: number | null
+  selfieWithIdMediaId?: number | string | null
   verificationStatus: MentorVerificationStatusApiResponse
   verifiedBy?: number | string | null
   verifiedAt?: string | null
@@ -274,9 +274,9 @@ export type UpsertCurrentMentorVerificationRequest = {
   idCardFrontUrl: string
   idCardBackUrl: string
   selfieWithIdUrl?: string | null
-  idCardFrontMediaId?: number | null
-  idCardBackMediaId?: number | null
-  selfieWithIdMediaId?: number | null
+  idCardFrontMediaId?: number | string | null
+  idCardBackMediaId?: number | string | null
+  selfieWithIdMediaId?: number | string | null
 }
 
 export type MentorAvailabilityDetailApiResponse = {

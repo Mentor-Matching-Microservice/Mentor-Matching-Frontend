@@ -8,7 +8,7 @@ export type BecomeMentorDocumentKey = 'idFront' | 'idBack' | 'selfieWithId'
 
 export type BecomeMentorDocumentValue = {
   fileName: string
-  mediaId: number | null
+  mediaId: number | string | null
   previewUrl: string
 }
 
@@ -36,7 +36,7 @@ export type BecomeMentorAvailabilityWindow = {
 
 export type BecomeMentorFormState = {
   avatarUrl: string
-  avatarMediaId: number | null
+  avatarMediaId: number | string | null
   fullName: string
   gender: string
   hometownCityId: string

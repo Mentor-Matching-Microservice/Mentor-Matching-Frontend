@@ -4,7 +4,7 @@ import { createRequiredStringSchema } from '@/schemas/common.schema'
 
 const verificationDocumentSchema = z.object({
   fileName: z.string().trim(),
-  mediaId: z.number().nullable(),
+  mediaId: z.union([z.number(), z.string()]).nullable(),
   previewUrl: z.string().trim()
 })
 
